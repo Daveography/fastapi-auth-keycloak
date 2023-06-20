@@ -1,0 +1,67 @@
+import unittest
+from unittest import mock
+
+from starlette.authentication import AuthenticationError
+from starlette.datastructures import Headers
+from starlette.requests import HTTPConnection
+
+from fastapi_auth.jwt import JWTAPIUser, JWTAuthBackend
+
+
+class JWTAuthBackendTests(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        self.backend = JWTAuthBackend(
+            algorithm=mock.MagicMock(),
+            audience=mock.MagicMock(),
+            key=mock.MagicMock(),
+            user_factory=JWTAPIUser.parse_obj,
+        )
+
+    @mock.patch("fastapi_auth.jwt.backend.jwt")
+    async def test_should_create_user_for_authorization_bearer_header(self, mock_jwt: mock.MagicMock):
+        mock_jwt.decode.return_value = {
+            "sid": "e93ca207-4891-4917-af9b-69a7e2770a41",
+            "preferred_username": "my_user",
+            "email": "me@alphalayer.ai",
+        }
+
+        http_mock = mock.MagicMock(HTTPConnection)
+        http_mock.headers = Headers({"Authorization": "Bearer xzy123"})
+
+        creds, user = await self.backend.authenticate(http_mock)  # type: ignore
+
+        self.assertIsNotNone(creds)
+        self.assertIn("authenticated", creds.scopes)
+
+        self.assertIsNotNone(user)
+        self.assertEqual("e93ca207-4891-4917-af9b-69a7e2770a41", user.identity)
+        self.assertEqual("my_user", user.display_name)
+        self.assertTrue(user.is_authenticated)
+
+    async def test_should_raise_if_no_authorization_header(self):
+        http_mock = mock.MagicMock(HTTPConnection)
+        http_mock.headers = Headers({})
+
+        with self.assertRaises(AuthenticationError):
+            await self.backend.authenticate(http_mock)
+
+    async def test_should_raise_if_authorization_empty(self):
+        http_mock = mock.MagicMock(HTTPConnection)
+        http_mock.headers = Headers({"Authorization": ""})
+
+        with self.assertRaises(AuthenticationError):
+            await self.backend.authenticate(http_mock)
+
+    async def test_should_raise_if_authorization_scheme_not_bearer(self):
+        http_mock = mock.MagicMock(HTTPConnection)
+        http_mock.headers = Headers({"Authorization": "Basic xzy123"})
+
+        with self.assertRaises(AuthenticationError):
+            await self.backend.authenticate(http_mock)
+
+    async def test_should_raise_if_authorization_credential_empty(self):
+        http_mock = mock.MagicMock(HTTPConnection)
+        http_mock.headers = Headers({"Authorization": "Bearer"})
+
+        with self.assertRaises(AuthenticationError):
+            await self.backend.authenticate(http_mock)
