@@ -1,5 +1,6 @@
 import unittest
 from unittest import mock
+from uuid import uuid4
 
 from starlette.authentication import AuthenticationError
 from starlette.datastructures import Headers
@@ -19,8 +20,9 @@ class JWTAuthBackendTests(unittest.IsolatedAsyncioTestCase):
 
     @mock.patch("fastapi_auth.jwt.backend.jwt")
     async def test_should_create_user_for_authorization_bearer_header(self, mock_jwt: mock.MagicMock):
+        sub = str(uuid4())
         mock_jwt.decode.return_value = {
-            "sid": "e93ca207-4891-4917-af9b-69a7e2770a41",
+            "sub": sub,
             "preferred_username": "my_user",
             "email": "me@alphalayer.ai",
         }
@@ -34,7 +36,7 @@ class JWTAuthBackendTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("authenticated", creds.scopes)
 
         self.assertIsNotNone(user)
-        self.assertEqual("e93ca207-4891-4917-af9b-69a7e2770a41", user.identity)
+        self.assertEqual(sub, user.identity)
         self.assertEqual("my_user", user.display_name)
         self.assertTrue(user.is_authenticated)
 

@@ -6,7 +6,7 @@ from fastapi_auth.user import APIUser
 
 
 class JWTAPIUser(APIUser):
-    sid: UUID4
+    sub: UUID4
     name: Optional[str]
     preferred_username: str
     given_name: Optional[str]
@@ -23,7 +23,7 @@ class JWTAPIUser(APIUser):
 
     @property
     def identity(self) -> str:
-        return str(self.sid)
+        return str(self.sub)
 
     class Config:
         allow_mutation = False
