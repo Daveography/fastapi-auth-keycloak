@@ -7,10 +7,10 @@ from fastapi_auth.user import APIUser
 
 class JWTAPIUser(APIUser):
     sub: UUID4
-    name: Optional[str]
+    name: Optional[str] = None
     preferred_username: str
-    given_name: Optional[str]
-    family_name: Optional[str]
+    given_name: Optional[str] = None
+    family_name: Optional[str] = None
     email: EmailStr
 
     @property

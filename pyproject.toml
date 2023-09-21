@@ -8,8 +8,8 @@ packages = [{include = "fastapi_auth"}]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-pydantic = { extras = ["email"], version = "^1.10.7" }
-fastapi = "^0.97.0"
+pydantic = { extras = ["email"], version = ">=1.10.7,<3.0" }
+fastapi = ">=0.97.0,<1.0"
 pyjwt = { extras = ["crypto"], version = "^2.6.0" }
 
 [tool.poetry.group.dev.dependencies]
