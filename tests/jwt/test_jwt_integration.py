@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 from starlette.middleware.authentication import AuthenticationMiddleware
 
 from fastapi_auth import PublicKeySecret
-from fastapi_auth.jwt import JWTAPIUser, JWTAuthBackend
+from fastapi_auth.jwt import JWTAuthBackend
 
 # Key and JWT generated from https://jwt.io/
 rs_public_key = PublicKeySecret(
@@ -41,7 +41,6 @@ backend = JWTAuthBackend(
     algorithm="RS256",
     audience="alphalayer",
     key=rs_public_key,
-    user_factory=JWTAPIUser.parse_obj,
 )
 
 app = FastAPI()

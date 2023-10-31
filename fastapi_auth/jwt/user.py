@@ -1,17 +1,10 @@
-from typing import Optional
-
-from pydantic import UUID4, EmailStr
+from pydantic import root_validator
 
 from fastapi_auth.user import APIUser
 
 
-class JWTAPIUser(APIUser):
-    sub: UUID4
-    name: Optional[str] = None
-    preferred_username: str
-    given_name: Optional[str] = None
-    family_name: Optional[str] = None
-    email: EmailStr
+class JWTUser(APIUser):
+    sub: str
 
     @property
     def is_authenticated(self) -> bool:
@@ -19,11 +12,21 @@ class JWTAPIUser(APIUser):
 
     @property
     def display_name(self) -> str:
-        return self.preferred_username
+        return self.sub
 
     @property
     def identity(self) -> str:
-        return str(self.sub)
+        return self.sub
 
-    class Config:
-        allow_mutation = False
+
+class JWTAPIUser(JWTUser):
+    @root_validator(pre=True)
+    def warn_of_deprecation(cls, values):
+        from warnings import warn
+
+        warn(
+            "JWTAPIUser is deprecated, use JWTUser instead; JWTAPIUser will be removed in a future release",
+            DeprecationWarning,
+            2,
+        )
+        return values

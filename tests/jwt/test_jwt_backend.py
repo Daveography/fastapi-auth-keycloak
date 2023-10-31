@@ -6,7 +6,7 @@ from starlette.authentication import AuthenticationError
 from starlette.datastructures import Headers
 from starlette.requests import HTTPConnection
 
-from fastapi_auth.jwt import JWTAPIUser, JWTAuthBackend
+from fastapi_auth.jwt import JWTAuthBackend, JWTUser
 
 
 class JWTAuthBackendTests(unittest.IsolatedAsyncioTestCase):
@@ -15,7 +15,6 @@ class JWTAuthBackendTests(unittest.IsolatedAsyncioTestCase):
             algorithm=mock.MagicMock(),
             audience=mock.MagicMock(),
             key=mock.MagicMock(),
-            user_factory=JWTAPIUser.parse_obj,
         )
 
     @mock.patch("fastapi_auth.jwt.backend.jwt")
@@ -23,8 +22,6 @@ class JWTAuthBackendTests(unittest.IsolatedAsyncioTestCase):
         sub = str(uuid4())
         mock_jwt.decode.return_value = {
             "sub": sub,
-            "preferred_username": "my_user",
-            "email": "me@alphalayer.ai",
         }
 
         http_mock = mock.MagicMock(HTTPConnection)
@@ -36,8 +33,9 @@ class JWTAuthBackendTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("authenticated", creds.scopes)
 
         self.assertIsNotNone(user)
+        self.assertIsInstance(user, JWTUser)
         self.assertEqual(sub, user.identity)
-        self.assertEqual("my_user", user.display_name)
+        self.assertEqual(sub, user.display_name)
         self.assertTrue(user.is_authenticated)
 
     async def test_should_raise_if_no_authorization_header(self):

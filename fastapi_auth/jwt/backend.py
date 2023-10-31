@@ -5,6 +5,7 @@ from starlette.authentication import AuthCredentials, AuthenticationBackend, Aut
 from starlette.datastructures import Secret
 from starlette.requests import HTTPConnection
 
+from fastapi_auth.jwt.user import JWTUser
 from fastapi_auth.user import APIUser
 
 
@@ -14,7 +15,7 @@ class JWTAuthBackend(AuthenticationBackend):
         algorithm: str,
         audience: str,
         key: Secret,
-        user_factory: Callable[[Dict[str, Any]], APIUser],
+        user_factory: Callable[[Dict[str, Any]], APIUser] = JWTUser.parse_obj,
     ) -> None:
         self.__algorithm = algorithm
         self.__audience = audience
