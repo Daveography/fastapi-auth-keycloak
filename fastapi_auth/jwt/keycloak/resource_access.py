@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from fastapi_auth.jwt.keycloak.client_access import KeycloakClientAccess
+from .client_access import KeycloakClientAccess
 
 
 class KeycloakResourceAccess(BaseModel):

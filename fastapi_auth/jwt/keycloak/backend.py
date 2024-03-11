@@ -1,7 +1,7 @@
 from starlette.datastructures import Secret
 
-from fastapi_auth.jwt.backend import JWTAuthBackend
-from fastapi_auth.jwt.keycloak.user import KeycloakUser
+from ..backend import JWTAuthBackend
+from .user import KeycloakUser
 
 
 class KeycloakAuthBackend(JWTAuthBackend):

@@ -2,8 +2,8 @@ from typing import Optional
 
 from pydantic import UUID4, EmailStr, Field
 
-from fastapi_auth.jwt.keycloak.resource_access import KeycloakResourceAccess
-from fastapi_auth.user import APIUser
+from ...user import APIUser
+from .resource_access import KeycloakResourceAccess
 
 
 class KeycloakUser(APIUser):

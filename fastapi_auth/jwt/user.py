@@ -1,6 +1,6 @@
 from pydantic import root_validator
 
-from fastapi_auth.user import APIUser
+from ..user import APIUser
 
 
 class JWTUser(APIUser):

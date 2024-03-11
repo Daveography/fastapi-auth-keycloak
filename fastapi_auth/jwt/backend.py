@@ -5,8 +5,8 @@ from starlette.authentication import AuthCredentials, AuthenticationBackend, Aut
 from starlette.datastructures import Secret
 from starlette.requests import HTTPConnection
 
-from fastapi_auth.jwt.user import JWTUser
-from fastapi_auth.user import APIUser
+from ..user import APIUser
+from .user import JWTUser
 
 
 class JWTAuthBackend(AuthenticationBackend):
