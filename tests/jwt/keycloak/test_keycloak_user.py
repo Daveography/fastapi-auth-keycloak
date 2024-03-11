@@ -111,3 +111,41 @@ class KeycloakUserTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertFalse(user.resource_access.has_client("alpha-app"))  # type: ignore
         self.assertFalse(user.has_role("alpha-app", "super-user"))  # type: ignore
+
+    async def test_should_be_true_when_user_is_in_expected_group(self, mock_jwt: mock.MagicMock):
+        sub = str(uuid4())
+        mock_jwt.decode.return_value = {
+            "sub": sub,
+            "email": "me@alphalayer.ai",
+            "preferred_username": "my_user",
+            "groups": ["administrators"],
+        }
+
+        _, user = await self.backend.authenticate(self.http_mock)  # type: ignore
+
+        self.assertTrue(user.in_group("administrators"))  # type: ignore
+
+    async def test_should_be_false_when_user_is_not_in_group(self, mock_jwt: mock.MagicMock):
+        sub = str(uuid4())
+        mock_jwt.decode.return_value = {
+            "sub": sub,
+            "email": "me@alphalayer.ai",
+            "preferred_username": "my_user",
+            "groups": ["users"],
+        }
+
+        _, user = await self.backend.authenticate(self.http_mock)  # type: ignore
+
+        self.assertFalse(user.in_group("administrators"))  # type: ignore
+
+    async def test_should_be_false_when_groups_are_not_provided(self, mock_jwt: mock.MagicMock):
+        sub = str(uuid4())
+        mock_jwt.decode.return_value = {
+            "sub": sub,
+            "email": "me@alphalayer.ai",
+            "preferred_username": "my_user",
+        }
+
+        _, user = await self.backend.authenticate(self.http_mock)  # type: ignore
+
+        self.assertFalse(user.in_group("administrators"))  # type: ignore

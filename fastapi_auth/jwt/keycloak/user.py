@@ -13,6 +13,7 @@ class KeycloakUser(APIUser):
     name: Optional[str] = None
     given_name: Optional[str] = None
     family_name: Optional[str] = None
+    groups: Optional[list[str]] = None
     resource_access: Optional[KeycloakResourceAccess] = Field(default_factory=KeycloakResourceAccess)
 
     @property
@@ -22,6 +23,9 @@ class KeycloakUser(APIUser):
     @property
     def identity(self) -> str:
         return str(self.id)
+
+    def in_group(self, group: str) -> bool:
+        return self.groups is not None and group in self.groups
 
     def has_role(self, client: str, role: str) -> bool:
         if self.resource_access is not None and self.resource_access.has_client(client):
