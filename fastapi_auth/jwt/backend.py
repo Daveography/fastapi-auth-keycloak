@@ -10,6 +10,13 @@ from .user import JWTUser
 
 
 class JWTAuthBackend(AuthenticationBackend):
+    """
+    An implementation of the Starlette `AuthenticationBackend` that parses JWT tokens for authentication.
+
+    *NOTE*: This is mostly meant to be used as a base class for more specific auth providers that provide JWT tokens,
+    such as Keycloak, but it can be used directly to get a basic `JWTUser` object.
+    """
+
     def __init__(
         self,
         algorithm: str,
@@ -17,6 +24,16 @@ class JWTAuthBackend(AuthenticationBackend):
         key: Secret,
         user_factory: Callable[[Dict[str, Any]], APIUser] = JWTUser.parse_obj,
     ) -> None:
+        """
+        Initializes a new instance of the `JWTAuthBackend` class.
+
+        Args:
+            algorithm (str): The JWT algorithm to use for token verification.
+            audience (str): The expected audience for the token for verification
+            key (Secret): They secret key used to verify the token.
+            user_factory (Callable[[Dict[str, Any]], APIUser], optional): A method to be called with the decoded JWT
+                as the sole parameter in order to construct the user object. Defaults to `JWTUser.parse_obj`.
+        """
         self.__algorithm = algorithm
         self.__audience = audience
         self.__key = key
