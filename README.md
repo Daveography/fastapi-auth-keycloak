@@ -57,6 +57,13 @@ def get_privileged_data(request: Request):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "User not authenticated.")
 
     return {"OMG TOP SECRET"}
+
+@app.get("/no-homers")
+def get_no_homers_data(request: Request):
+    if user.groups is not None and "/homers/simpson" in user.groups:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "User not authenticated.")
+
+    return {"Welcome Homer Glumplich!"}
 ```
 
 

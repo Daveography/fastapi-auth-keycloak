@@ -123,7 +123,8 @@ class KeycloakUserTests(unittest.IsolatedAsyncioTestCase):
 
         _, user = await self.backend.authenticate(self.http_mock)  # type: ignore
 
-        self.assertTrue(user.in_group("/alpha-app/administrators"))  # type: ignore
+        self.assertIsNotNone(user.groups)  # type: ignore
+        self.assertTrue("/alpha-app/administrators" in user.groups)  # type: ignore
 
     async def test_should_be_false_when_user_is_not_in_group(self, mock_jwt: mock.MagicMock):
         sub = str(uuid4())
@@ -136,9 +137,10 @@ class KeycloakUserTests(unittest.IsolatedAsyncioTestCase):
 
         _, user = await self.backend.authenticate(self.http_mock)  # type: ignore
 
-        self.assertFalse(user.in_group("/alpha-app/administrators"))  # type: ignore
+        self.assertIsNotNone(user.groups)  # type: ignore
+        self.assertFalse("/alpha-app/administrators" in user.groups)  # type: ignore
 
-    async def test_should_be_false_when_groups_are_not_provided(self, mock_jwt: mock.MagicMock):
+    async def test_should_be_none_groups_are_not_provided(self, mock_jwt: mock.MagicMock):
         sub = str(uuid4())
         mock_jwt.decode.return_value = {
             "sub": sub,
@@ -148,4 +150,4 @@ class KeycloakUserTests(unittest.IsolatedAsyncioTestCase):
 
         _, user = await self.backend.authenticate(self.http_mock)  # type: ignore
 
-        self.assertFalse(user.in_group("administrators"))  # type: ignore
+        self.assertIsNone(user.groups)  # type: ignore
