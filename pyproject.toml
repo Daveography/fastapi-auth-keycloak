@@ -8,7 +8,7 @@ packages = [{include = "fastapi_auth"}]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-pydantic = { extras = ["email"], version = ">=1.10.7,<3.0" }
+pydantic = { extras = ["email"], version = "^2.5.0" }
 fastapi = ">=0.97.0,<1.0"
 pyjwt = { extras = ["crypto"], version = "^2.6.0" }
 
@@ -47,7 +47,7 @@ profile = "black"
 lines_between_sections = 1
 line_length = 120
 multi_line_output = 3
-sections = ["FUTURE","STDLIB","THIRDPARTY","API","PIPELINE","FIRSTPARTY","LOCALFOLDER"]
+sections = ["FUTURE","STDLIB","THIRDPARTY","FIRSTPARTY","LOCALFOLDER"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

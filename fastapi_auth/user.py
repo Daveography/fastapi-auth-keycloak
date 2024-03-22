@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from starlette.authentication import BaseUser
 
 
@@ -41,5 +41,4 @@ class APIUser(ABC, BaseUser, BaseModel):
         """
         raise NotImplementedError()
 
-    class Config:
-        allow_mutation = False
+    model_config = ConfigDict(frozen=True)

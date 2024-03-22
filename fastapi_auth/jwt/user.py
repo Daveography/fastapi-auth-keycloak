@@ -1,4 +1,4 @@
-from pydantic import Field, root_validator
+from pydantic import Field
 
 from ..user import APIUser
 
@@ -35,20 +35,3 @@ class JWTUser(APIUser):
             str: _description_
         """
         return self.sub
-
-
-class JWTAPIUser(JWTUser):
-    """
-    Deprecated; use `JWTUser` instead.
-    """
-
-    @root_validator(pre=True)
-    def warn_of_deprecation(cls, values):
-        from warnings import warn
-
-        warn(
-            "JWTAPIUser is deprecated, use JWTUser instead; JWTAPIUser will be removed in a future release",
-            DeprecationWarning,
-            2,
-        )
-        return values
