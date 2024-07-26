@@ -1,11 +1,15 @@
-from starlette.datastructures import Secret
+from pydantic import AfterValidator, RootModel
+from typing_extensions import Annotated
 
 
-class PublicKeySecret(Secret):
-    """
-    A wrapper for a public key string that should otherwise not be revealed in tracebacks etc.
-    When cast to a string, the value will be wrapped with`-----BEGIN PUBLIC KEY-----` and `-----END PUBLIC KEY-----`
-    """
+def _wrap_if_needed(value: str) -> str:
+    if "BEGIN PUBLIC KEY" not in value:
+        value = f"-----BEGIN PUBLIC KEY-----\n{value}\n-----END PUBLIC KEY-----"
+    return value
+
+
+class PublicKey(RootModel[str]):
+    root: Annotated[str, AfterValidator(_wrap_if_needed)]
 
     def __str__(self) -> str:
-        return f"-----BEGIN PUBLIC KEY-----\n{self._value}\n-----END PUBLIC KEY-----"
+        return self.root

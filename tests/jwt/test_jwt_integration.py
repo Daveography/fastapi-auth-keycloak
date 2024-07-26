@@ -4,11 +4,11 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from starlette.middleware.authentication import AuthenticationMiddleware
 
-from fastapi_auth import PublicKeySecret
+from fastapi_auth import PublicKey
 from fastapi_auth.jwt import JWTAuthBackend
 
 # Key and JWT generated from https://jwt.io/
-rs_public_key = PublicKeySecret(
+rs_public_key = PublicKey(
     "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAu1SU1LfVLPHCozMxH2Mo"
     "4lgOEePzNm0tRgeLezV6ffAt0gunVTLw7onLRnrq0/IzW7yWR7QkrmBL7jTKEn5u"
     "+qKhbwKfBstIs+bMY2Zkp18gnTxKLxoS2tFczGkPLPgizskuemMghRniWaoLcyeh"
