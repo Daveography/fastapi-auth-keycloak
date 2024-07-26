@@ -1,7 +1,17 @@
 from starlette.datastructures import Secret
+from typing_extensions import Optional
 
+from ...hmac_key import HMACKey
+from ...public_key import PublicKey
 from ..backend import JWTAuthBackend
 from .user import KeycloakUser
+
+try:
+    from keycloak import KeycloakOpenID
+except ImportError:
+    raise RuntimeError(
+        "Install the package with the `keycloak` extra (fastapi-auth[keycloak]) to use the KeycloakAuthBackend"
+    )
 
 
 class KeycloakAuthBackend(JWTAuthBackend):
@@ -11,17 +21,42 @@ class KeycloakAuthBackend(JWTAuthBackend):
 
     def __init__(
         self,
-        algorithm: str,
+        url: str,
+        realm: str,
+        client_id: str,
+        client_secret: Secret,
         audience: str,
-        key: Secret,
+        hmac_key: Optional[HMACKey] = None,
     ) -> None:
         """
         Initializes a new instance of the `JWTAuthBackend` class.
 
         Args:
-            algorithm (str): The JWT algorithm to use for token verification.
+            url (str): The base URL of the Keycloak Server.
+            realm (str): The Keycloak Realm used for authentication.
+            client_id (str): The Keycloak Client Id to use to configure this backend.
+            client_secret (Secret): They Client Secret key for the Client Id.
             audience (str): The expected audience for the token for verification
-            key (Secret): They secret key used to verify the token.
         """
 
-        super().__init__(algorithm, audience, key, user_factory=KeycloakUser.parse_obj)
+        keycloak = KeycloakOpenID(
+            server_url=url,
+            realm_name=realm,
+            client_id=client_id,
+            client_secret_key=str(client_secret),
+        )
+
+        config = keycloak.well_known()
+        algorithms: list[str] = config["id_token_signing_alg_values_supported"]  # type: ignore
+
+        if hmac_key is not None:
+            key = hmac_key
+        else:
+            key = PublicKey(keycloak.public_key())
+
+        super().__init__(
+            algorithms=algorithms,
+            audience=audience,
+            key=key,
+            user_factory=KeycloakUser.model_validate,
+        )
