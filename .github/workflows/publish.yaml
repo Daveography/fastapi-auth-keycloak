@@ -3,7 +3,7 @@ name: Publish Package
 on:
   release:
     types:
-      - created
+      - published
 
 jobs:
   publish:
@@ -20,7 +20,9 @@ jobs:
 
     steps:
       - name: Git Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
 
       - name: Install poetry
         run: pipx install poetry
@@ -32,11 +34,19 @@ jobs:
           cache: poetry
 
       - name: Login to Azure
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          creds: |
+            {
+              "clientSecret":  "${{ secrets.AZURE_CLIENT_SECRET }}",
+              "subscriptionId":  "${{ vars.AZURE_SUBSCRIPTION_ID }}",
+              "tenantId":  "${{ vars.AZURE_TENANT_ID }}",
+              "clientId":  "${{ vars.AZURE_CLIENT_ID }}"
+            }
+          # Switch the above to below when MS enables wildcard FedCreds
+          # client-id: ${{ vars.AZURE_CLIENT_ID }}
+          # tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          # subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       - name: Set ADO Token for Private Package Feed
         run: |
