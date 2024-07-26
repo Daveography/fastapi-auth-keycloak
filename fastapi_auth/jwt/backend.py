@@ -6,6 +6,8 @@ from starlette.datastructures import Secret
 from starlette.requests import HTTPConnection
 from typing_extensions import Any, Callable, Dict, Optional, Tuple, Union
 
+from ..hmac_key import HMACKey
+from ..public_key import PublicKey
 from ..user import APIUser
 from .user import JWTUser
 
@@ -22,23 +24,24 @@ class JWTAuthBackend(AuthenticationBackend):
         self,
         algorithms: Iterable[str],
         audience: str,
-        key: Secret,
-        user_factory: Callable[[Dict[str, Any]], APIUser] = JWTUser.parse_obj,
+        key: Union[PublicKey, HMACKey],
+        user_factory: Callable[[Dict[str, Any]], APIUser] = JWTUser.model_validate,
+        hs_key: Optional[Secret] = None,
     ) -> None:
         """
         Initializes a new instance of the `JWTAuthBackend` class.
 
         Args:
-            algorithm (str): The JWT algorithm to use for token verification.
+            algorithms (Iterable[str]): The JWT algorithms to use for token verification.
             audience (str): The expected audience for the token for verification
-            key (Secret): They secret key used to verify the token.
+            key (Secret): They public key (or HMAC secret key) used to verify the token.
             user_factory (Callable[[Dict[str, Any]], APIUser], optional): A method to be called with the decoded JWT
-                as the sole parameter in order to construct the user object. Defaults to `JWTUser.parse_obj`.
+                as the sole parameter in order to construct the user object. Defaults to `JWTUser.model_validate`.
         """
         self._algorithms = list(algorithms)
-        self.__audience = audience
-        self.__key = key
-        self.__user_factory = user_factory
+        self._audience = audience
+        self._user_factory = user_factory
+        self._key = key
 
     async def authenticate(self, conn: HTTPConnection) -> Optional[Tuple[AuthCredentials, BaseUser]]:
         if "Authorization" in conn.headers:
@@ -50,15 +53,15 @@ class JWTAuthBackend(AuthenticationBackend):
             try:
                 token = jwt.decode(
                     jwt=credential,
-                    key=str(self.__key),
+                    key=str(self._key),
                     algorithms=self._algorithms,
-                    audience=self.__audience,
+                    audience=self._audience,
                 )
 
             except jwt.InvalidTokenError as err:
                 raise AuthenticationError(err)
 
-            user = self.__user_factory(token)
+            user = self._user_factory(token)
 
             return AuthCredentials(["authenticated"]), user
 
