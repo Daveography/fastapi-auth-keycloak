@@ -4,21 +4,32 @@ Provides FastAPI backend modules for these Authentication methods:
 - JSON Web Token (JWT)
 - Keycloak JWT
 
+# Install
+```bash
+poetry source add --priority=supplemental alphalayer https://pkgs.dev.azure.com/alphalayerai/Packages/_packaging/Python/pypi/simple/
+poetry add --source alphalayer fastapi-auth
+```
+
+If using Keycloak:
+```bash
+poetry add --source alphalayer fastapi-auth[keycloak]
+```
+
 ## Examples
 
-### Raw JWT
+### Basic JWT
 
 ```python
 from fastapi import FastAPI, HTTPException, Request, status
-from fastapi_auth import PublicKeySecret
+from fastapi_auth import PublicKey
 from fastapi_auth.jwt import JWTUser, JWTAuthBackend
 from starlette.middleware import Middleware
 from starlette.middleware.authentication import AuthenticationMiddleware
 
 backend = JWTAuthBackend(
-    algorithm="RS256",
+    algorithms=["RS256"],
     audience="my_aud",
-    key=PublicKeySecret("<public key>"),
+    key=PublicKey("<public key>"),
 )
 
 app = FastAPI()
@@ -29,19 +40,33 @@ def get_current_user_identity(request: Request):
     return request.user.identity
 ```
 
+#### If JWTs signed using HMAC (i.e., HS256, HS384, HS512)
+```python
+from fastapi_auth import HMACKey
+
+backend = JWTAuthBackend(
+    algorithms=["RS256"],
+    audience="my_aud",
+    key=HMACKey("<private HMAC shared key>"),
+)
+
+```
+
 ### Keycloak JWT
 
 ```python
 from fastapi import FastAPI, HTTPException, Request, status
-from fastapi_auth import PublicKeySecret
 from fastapi_auth.jwt.keycloak import KeycloakUser, KeycloakAuthBackend
+from starlette.datastructures import Secret
 from starlette.middleware import Middleware
 from starlette.middleware.authentication import AuthenticationMiddleware
 
 backend = KeycloakAuthBackend(
-    algorithm="RS256",
+    url="https://my-keycloak.com/",
+    realm="my-realm",
+    client_id="70a82a5a-b671-4acb-9ecf-b5dcce0305e3",
+    client_secret=Secret("<client-secret>"),
     audience="my_aud",
-    key=PublicKeySecret("<public key>"),
 )
 
 app = FastAPI()
@@ -66,6 +91,21 @@ def get_no_homers_data(request: Request):
     return {"Welcome Homer Glumplich!"}
 ```
 
+
+#### If JWTs signed using HMAC (i.e., HS256, HS384, HS512)
+```python
+from fastapi_auth import HMACKey
+
+backend = KeycloakAuthBackend(
+    url="https://my-keycloak.com/",
+    realm="my-realm",
+    client_id="70a82a5a-b671-4acb-9ecf-b5dcce0305e3",
+    client_secret=Secret("<client-secret>"),
+    audience="my_aud",
+    hmac_key=HMACKey("<private HMAC shared key>"),
+)
+
+```
 
 ## Contributing
 
