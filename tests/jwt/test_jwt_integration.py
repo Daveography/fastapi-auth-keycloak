@@ -38,7 +38,7 @@ invalid_jwt = (  # Generated with a different key pair
 )
 
 backend = JWTAuthBackend(
-    algorithm="RS256",
+    algorithms=["RS256"],
     audience="alphalayer",
     key=rs_public_key,
 )

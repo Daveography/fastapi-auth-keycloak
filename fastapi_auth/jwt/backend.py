@@ -1,9 +1,10 @@
-from typing import Any, Callable, Dict, Optional, Tuple
+from collections.abc import Iterable
 
 import jwt
 from starlette.authentication import AuthCredentials, AuthenticationBackend, AuthenticationError, BaseUser
 from starlette.datastructures import Secret
 from starlette.requests import HTTPConnection
+from typing_extensions import Any, Callable, Dict, Optional, Tuple, Union
 
 from ..user import APIUser
 from .user import JWTUser
@@ -19,7 +20,7 @@ class JWTAuthBackend(AuthenticationBackend):
 
     def __init__(
         self,
-        algorithm: str,
+        algorithms: Iterable[str],
         audience: str,
         key: Secret,
         user_factory: Callable[[Dict[str, Any]], APIUser] = JWTUser.parse_obj,
@@ -34,7 +35,7 @@ class JWTAuthBackend(AuthenticationBackend):
             user_factory (Callable[[Dict[str, Any]], APIUser], optional): A method to be called with the decoded JWT
                 as the sole parameter in order to construct the user object. Defaults to `JWTUser.parse_obj`.
         """
-        self.__algorithm = algorithm
+        self._algorithms = list(algorithms)
         self.__audience = audience
         self.__key = key
         self.__user_factory = user_factory
@@ -50,7 +51,7 @@ class JWTAuthBackend(AuthenticationBackend):
                 token = jwt.decode(
                     jwt=credential,
                     key=str(self.__key),
-                    algorithms=[self.__algorithm],
+                    algorithms=self._algorithms,
                     audience=self.__audience,
                 )
 

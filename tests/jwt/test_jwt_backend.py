@@ -12,7 +12,7 @@ from fastapi_auth.jwt import JWTAuthBackend, JWTUser
 class JWTAuthBackendTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.backend = JWTAuthBackend(
-            algorithm=mock.MagicMock(),
+            algorithms=mock.MagicMock(),
             audience=mock.MagicMock(),
             key=mock.MagicMock(),
         )
