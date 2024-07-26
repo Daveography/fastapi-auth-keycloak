@@ -3,6 +3,7 @@ from typing import Optional
 from pydantic import UUID4, EmailStr, Field
 
 from ...user import APIUser
+from .authorization import KeycloakAuthorization
 from .resource_access import KeycloakResourceAccess
 
 
@@ -26,6 +27,9 @@ class KeycloakUser(APIUser):
     )
     resource_access: Optional[KeycloakResourceAccess] = Field(
         default_factory=KeycloakResourceAccess, description="The client role accesses that the user has"
+    )
+    authorization: Optional[KeycloakAuthorization] = Field(
+        default_factory=KeycloakAuthorization, description="The authorization permissions that the user has"
     )
 
     @property
@@ -66,3 +70,18 @@ class KeycloakUser(APIUser):
             return self.resource_access[client].has_role(role)
 
         return False
+
+    def has_permission(self, resource_name: str, scope: Optional[str] = None) -> bool:
+        """
+        Does the user have authorized access to the specified resource name (with optional scope)?
+
+        Args:
+            resource_name (str): The name of the resource to check.
+            scope (str, optional): Also check against a specific scope.
+
+        Returns:
+            bool: True if the user has permission to access the specified resource (with the specified scope if
+                    provided).
+        """
+
+        return self.authorization is not None and self.authorization.has_permission(resource_name, scope)
