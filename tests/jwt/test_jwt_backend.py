@@ -6,6 +6,7 @@ from starlette.authentication import AuthenticationError
 from starlette.datastructures import Headers
 from starlette.requests import HTTPConnection
 
+from fastapi_auth import PublicKey
 from fastapi_auth.jwt import JWTAuthBackend, JWTUser
 
 
@@ -14,7 +15,7 @@ class JWTAuthBackendTests(unittest.IsolatedAsyncioTestCase):
         self.backend = JWTAuthBackend(
             algorithms=mock.MagicMock(),
             audience=mock.MagicMock(),
-            key=mock.MagicMock(),
+            public_key=mock.MagicMock(PublicKey),
         )
 
     @mock.patch("fastapi_auth.jwt.backend.jwt")

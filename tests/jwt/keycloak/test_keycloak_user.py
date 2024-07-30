@@ -5,6 +5,7 @@ from uuid import uuid4
 from starlette.datastructures import Headers
 from starlette.requests import HTTPConnection
 
+from fastapi_auth import PublicKey
 from fastapi_auth.jwt.keycloak import KeycloakAuthBackend
 
 
@@ -12,7 +13,7 @@ from fastapi_auth.jwt.keycloak import KeycloakAuthBackend
 class KeycloakUserTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         with mock.patch("fastapi_auth.jwt.keycloak.backend.KeycloakOpenID") as mock_keycloak:
-            mock_keycloak.return_value.public_key.return_value = "public_key"
+            mock_keycloak.return_value.public_key.return_value = mock.MagicMock(PublicKey)
             self.backend = KeycloakAuthBackend(
                 url=mock.MagicMock(),
                 realm=mock.MagicMock(),

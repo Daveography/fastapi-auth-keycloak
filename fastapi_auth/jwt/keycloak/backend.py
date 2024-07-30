@@ -2,7 +2,6 @@ from starlette.datastructures import Secret
 from typing_extensions import Optional
 
 from ...hmac_key import HMACKey
-from ...public_key import PublicKey
 from ..backend import JWTAuthBackend
 from .user import KeycloakUser
 
@@ -49,14 +48,10 @@ class KeycloakAuthBackend(JWTAuthBackend):
         config = keycloak.well_known()
         algorithms: list[str] = config["id_token_signing_alg_values_supported"]  # type: ignore
 
-        if hmac_key is not None:
-            key = hmac_key
-        else:
-            key = PublicKey(keycloak.public_key())
-
         super().__init__(
             algorithms=algorithms,
             audience=audience,
-            key=key,
+            public_key=keycloak.public_key(),
+            hmac_key=hmac_key,
             user_factory=KeycloakUser.model_validate,
         )

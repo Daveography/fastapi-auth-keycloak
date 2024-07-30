@@ -2,7 +2,6 @@ from collections.abc import Iterable
 
 import jwt
 from starlette.authentication import AuthCredentials, AuthenticationBackend, AuthenticationError, BaseUser
-from starlette.datastructures import Secret
 from starlette.requests import HTTPConnection
 from typing_extensions import Any, Callable, Dict, Optional, Tuple, Union
 
@@ -24,9 +23,9 @@ class JWTAuthBackend(AuthenticationBackend):
         self,
         algorithms: Iterable[str],
         audience: str,
-        key: Union[PublicKey, HMACKey],
+        public_key: Optional[Union[PublicKey, str]] = None,
+        hmac_key: Optional[HMACKey] = None,
         user_factory: Callable[[Dict[str, Any]], APIUser] = JWTUser.model_validate,
-        hs_key: Optional[Secret] = None,
     ) -> None:
         """
         Initializes a new instance of the `JWTAuthBackend` class.
@@ -38,10 +37,18 @@ class JWTAuthBackend(AuthenticationBackend):
             user_factory (Callable[[Dict[str, Any]], APIUser], optional): A method to be called with the decoded JWT
                 as the sole parameter in order to construct the user object. Defaults to `JWTUser.model_validate`.
         """
+        if not public_key and not hmac_key:
+            raise RuntimeError("Either a public key or HMAC key (or both) must be provided")
+
         self._algorithms = list(algorithms)
         self._audience = audience
         self._user_factory = user_factory
-        self._key = key
+
+        if public_key is not None and not isinstance(public_key, PublicKey):
+            public_key = PublicKey(public_key)
+
+        self._public_key = public_key
+        self._hmac_key = hmac_key
 
     async def authenticate(self, conn: HTTPConnection) -> Optional[Tuple[AuthCredentials, BaseUser]]:
         if "Authorization" in conn.headers:
@@ -51,9 +58,20 @@ class JWTAuthBackend(AuthenticationBackend):
                 raise AuthenticationError("Invalid authentication credentials")
 
             try:
+                headers = jwt.get_unverified_header(credential)
+                if "alg" in headers and headers["alg"].upper().startswith("HS"):
+                    key = str(self._hmac_key)
+                    if not key:
+                        raise RuntimeError("JWT signed using HMAC, but HMAC key was not set on the backend")
+
+                else:
+                    if not self._public_key:
+                        raise RuntimeError("Unable to decode JWT, public key was not set on the backend")
+                    key = self._public_key.key
+
                 token = jwt.decode(
                     jwt=credential,
-                    key=str(self._key),
+                    key=key,  # type: ignore
                     algorithms=self._algorithms,
                     audience=self._audience,
                 )
