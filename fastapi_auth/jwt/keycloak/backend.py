@@ -1,5 +1,7 @@
+from collections.abc import Iterable
+
 from starlette.datastructures import Secret
-from typing_extensions import Optional
+from typing_extensions import Optional, Union
 
 from ...hmac_key import HMACKey
 from ..backend import JWTAuthBackend
@@ -24,7 +26,7 @@ class KeycloakAuthBackend(JWTAuthBackend):
         realm: str,
         client_id: str,
         client_secret: Secret,
-        audience: str,
+        audience: Union[str, Iterable[str]],
         hmac_key: Optional[HMACKey] = None,
     ) -> None:
         """
@@ -35,7 +37,7 @@ class KeycloakAuthBackend(JWTAuthBackend):
             realm (str): The Keycloak Realm used for authentication.
             client_id (str): The Keycloak Client Id to use to configure this backend.
             client_secret (Secret): They Client Secret key for the Client Id.
-            audience (str): The expected audience for the token for verification
+            audience (str | Iterable[str]): The expected audience(s) for the token for verification
         """
 
         keycloak = KeycloakOpenID(

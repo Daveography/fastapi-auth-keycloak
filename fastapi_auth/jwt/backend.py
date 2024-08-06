@@ -22,7 +22,7 @@ class JWTAuthBackend(AuthenticationBackend):
     def __init__(
         self,
         algorithms: Iterable[str],
-        audience: str,
+        audience: Union[str, Iterable[str]],
         public_key: Optional[Union[PublicKey, str]] = None,
         hmac_key: Optional[HMACKey] = None,
         user_factory: Callable[[Dict[str, Any]], APIUser] = JWTUser.model_validate,
@@ -32,7 +32,7 @@ class JWTAuthBackend(AuthenticationBackend):
 
         Args:
             algorithms (Iterable[str]): The JWT algorithms to use for token verification.
-            audience (str): The expected audience for the token for verification
+            audience (str | Iterable[str]): The expected audience(s) for the token for verification
             key (Secret): They public key (or HMAC secret key) used to verify the token.
             user_factory (Callable[[Dict[str, Any]], APIUser], optional): A method to be called with the decoded JWT
                 as the sole parameter in order to construct the user object. Defaults to `JWTUser.model_validate`.
