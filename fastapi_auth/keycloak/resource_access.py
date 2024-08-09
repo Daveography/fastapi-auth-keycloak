@@ -1,4 +1,4 @@
-from pydantic import Field, RootModel
+from pydantic import ConfigDict, Field, RootModel
 
 from .client_access import KeycloakClientAccess
 
@@ -43,3 +43,5 @@ class KeycloakResourceAccess(RootModel[dict[str, KeycloakClientAccess]]):
 
     def __getitem__(self, item):
         return self.root[item]
+
+    model_config = ConfigDict(frozen=True)

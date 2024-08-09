@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import Optional
 
 
@@ -12,3 +12,5 @@ class KeycloakResource(BaseModel):
     id: UUID = Field(..., alias="rsid", description="The Id of the resource")
     name: Optional[str] = Field(default=None, alias="rsname", description="The name of the resource")
     scopes: Optional[list[str]] = Field(default_factory=list, description="A list of scopes available for the resource")
+
+    model_config = ConfigDict(frozen=True)

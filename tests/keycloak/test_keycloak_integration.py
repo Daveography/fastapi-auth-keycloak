@@ -1,4 +1,5 @@
 import unittest
+from unittest import mock
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -6,7 +7,7 @@ from jwcrypto import jwk, jwt
 from starlette.middleware.authentication import AuthenticationMiddleware
 from typing_extensions import Any
 
-from fastapi_auth import JWTAuthBackend
+from fastapi_auth import KeycloakAuthBackend
 
 # Keys generated from https://jwt.io/
 rs_public_key = """
@@ -53,12 +54,18 @@ dn/RsYEONbwQSjIfMPkvxF+8HQ==
 """
 
 
-class JWTBackendIntegrationTests(unittest.TestCase):
-    def setUp(self):
-        backend = JWTAuthBackend(
-            algorithms=["RS256"],
+class KeycloakBackendIntegrationTests(unittest.TestCase):
+    @mock.patch("fastapi_auth.keycloak.backend.KeycloakOpenID.public_key")
+    @mock.patch("fastapi_auth.keycloak.backend.KeycloakOpenID.well_known")
+    def setUp(self, mock_well_known: mock.MagicMock, mock_public_key: mock.MagicMock):
+        mock_well_known.return_value = {"id_token_signing_alg_values_supported": ["RS256"]}
+        mock_public_key.return_value = rs_public_key
+        backend = KeycloakAuthBackend(
+            url=mock.MagicMock(),
+            realm=mock.MagicMock(),
+            client_id=mock.MagicMock(),
+            client_secret=mock.MagicMock(),
             audience=["alphalayer", "api"],
-            public_key=rs_public_key,
         )
 
         app = FastAPI()

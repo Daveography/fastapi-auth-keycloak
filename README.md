@@ -1,6 +1,6 @@
 # FastAPI Authentication Modules
 
-Provides FastAPI backend modules for these Authentication methods:
+Provides Starlette/FastAPI Authentication backend modules for these Authentication methods:
 - JSON Web Token (JWT)
 - Keycloak JWT
 
@@ -21,15 +21,15 @@ poetry add --source alphalayer fastapi-auth[keycloak]
 
 ```python
 from fastapi import FastAPI, HTTPException, Request, status
-from fastapi_auth import PublicKey
-from fastapi_auth.jwt import JWTUser, JWTAuthBackend
+from fastapi_auth import JWTUser, JWTAuthBackend, PublicKey
 from starlette.middleware import Middleware
 from starlette.middleware.authentication import AuthenticationMiddleware
 
 backend = JWTAuthBackend(
     algorithms=["RS256"],
-    audience="my_aud",
+    audience="my_aud", # This can be a list of accepted audiences, or an empty list for any
     key=PublicKey("<public key>"),
+    # authentication_required=False, <- Set this to allow unauthenticated requests; defaults to `True`
 )
 
 app = FastAPI()
@@ -40,23 +40,11 @@ def get_current_user_identity(request: Request):
     return request.user.identity
 ```
 
-#### If JWTs signed using HMAC (i.e., HS256, HS384, HS512)
-```python
-from fastapi_auth import HMACKey
-
-backend = JWTAuthBackend(
-    algorithms=["RS256"],
-    audience="my_aud",
-    key=HMACKey("<private HMAC shared key>"),
-)
-
-```
-
 ### Keycloak JWT
 
 ```python
 from fastapi import FastAPI, HTTPException, Request, status
-from fastapi_auth.jwt.keycloak import KeycloakUser, KeycloakAuthBackend
+from fastapi_auth import KeycloakUser, KeycloakAuthBackend
 from starlette.datastructures import Secret
 from starlette.middleware import Middleware
 from starlette.middleware.authentication import AuthenticationMiddleware
@@ -66,7 +54,8 @@ backend = KeycloakAuthBackend(
     realm="my-realm",
     client_id="70a82a5a-b671-4acb-9ecf-b5dcce0305e3",
     client_secret=Secret("<client-secret>"),
-    audience="my_aud",
+    audience="my_aud", # This can be a list of accepted audiences, or an empty list for any
+    # authentication_required=False, <- Set this to allow unauthenticated requests; defaults to `True`
 )
 
 app = FastAPI()
@@ -78,23 +67,32 @@ def get_current_user_identity(request: Request):
 
 @app.get("/privileged/area")
 def get_privileged_data(request: Request):
-    if not user.has_role(client="alpha-app", role="super-user"):
+    if not request.auth.has_role(client="alpha-app", role="super-user"):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "User not authenticated.")
 
     return {"OMG TOP SECRET"}
 
 @app.get("/no-homers")
 def get_no_homers_data(request: Request):
-    if user.groups is not None and "/homers/simpson" in user.groups:
+    if request.user.groups is not None and "/homers/simpson" in request.user.groups:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "User not authenticated.")
 
     return {"Welcome Homer Glumplich!"}
 ```
 
+#### Keycloak Authorization / UMA
+This module supports using Keycloak Authorization to secure resources via the returned `KeycloakAuthCredentials` object, provided via `Request.auth`. Any `uma-ticket` token is accepted by default.
 
-#### If JWTs signed using HMAC (i.e., HS256, HS384, HS512)
+Additionally, two options are provided for validating authorization access if the incoming token does not contain authorization permission claims:
+- `ticket`: The backend will contact the Keycloak server to obtain a `uma-ticket` (containing a list of all authorization permissions the user has) on the user's behalf when first authenticating a request; this token will be cached until the ticket expires, after which the backend will need to obtain a new one on the next request.
+- `permission`: Validating access via the `KeycloakAuthCredentials` will query the Keycloak server on demand to determine if the user is authorized to access the requested resource.
+
 ```python
-from fastapi_auth import HMACKey
+from fastapi import FastAPI, HTTPException, Request, status
+from fastapi_auth import KeycloakUser, KeycloakAuthBackend
+from starlette.datastructures import Secret
+from starlette.middleware import Middleware
+from starlette.middleware.authentication import AuthenticationMiddleware
 
 backend = KeycloakAuthBackend(
     url="https://my-keycloak.com/",
@@ -102,8 +100,22 @@ backend = KeycloakAuthBackend(
     client_id="70a82a5a-b671-4acb-9ecf-b5dcce0305e3",
     client_secret=Secret("<client-secret>"),
     audience="my_aud",
-    hmac_key=HMACKey("<private HMAC shared key>"),
+    uma_authorization="ticket" # or "permissions"
 )
+
+app = FastAPI()
+app.add_middleware(AuthenticationMiddleware, backend=backend)
+
+@app.get("/user/name")
+def get_current_user_identity(request: Request):
+    return request.user.display_name
+
+@app.get("/privileged/area")
+def get_privileged_data(request: Request):
+    if not request.auth.has_permission(resource_name="privileged_data", scope="privileged_data:read"):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "User not authenticated.")
+
+    return {"What privilege!"}
 
 ```
 

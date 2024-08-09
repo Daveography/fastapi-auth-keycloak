@@ -5,12 +5,9 @@ from ..user import APIUser
 
 class JWTUser(APIUser):
     """
-    A user that has been provided via a JSON Web Token (JWT).
+    A user that has been authenticated via a JSON Web Token (JWT).
 
-    Provides only the standard `sub` claim, but maps it to the `identity` and `display_name` properties.
-
-    *NOTE*: This is mostly meant to be a base class for more specific auth providers that provide JWT tokens, such as
-    Keycloak. It is not meant to be used directly in most cases.
+    Requires only the standard `sub` (subject) claim, and maps it to the `identity` and `display_name` properties.
     """
 
     sub: str = Field(..., description="The subject of the JWT, which is a unique identifier for the user")

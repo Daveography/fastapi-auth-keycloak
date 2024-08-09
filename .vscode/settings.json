@@ -5,7 +5,10 @@
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
     "cSpell.words": [
+        "cachetools",
         "Glumplich",
-        "keycloak"
+        "jwcrypto",
+        "keycloak",
+        "TLRU"
     ]
 }

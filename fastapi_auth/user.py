@@ -15,7 +15,7 @@ class APIUser(ABC, BaseUser, BaseModel):
         Is the user authenticated? (Should always be true when a user has been provided)
 
         Returns:
-            bool: True if the user is authenticated
+            bool: True if the user is authenticated.
         """
         return True
 
@@ -26,7 +26,7 @@ class APIUser(ABC, BaseUser, BaseModel):
         The display name of the user; this is determined by the subclass.
 
         Returns:
-            str: The display name of the user
+            str: The display name of the user.
         """
         raise NotImplementedError()
 
