@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import Optional
 
-from .resource import KeycloakResource
+from .resource_permission import KeycloakResourcePermission
 
 
 class KeycloakAuthorization(BaseModel):
@@ -10,7 +10,7 @@ class KeycloakAuthorization(BaseModel):
     Requires a token issued using the grant type of `urn:ietf:params:oauth:grant-type:uma-ticket`.
     """
 
-    permissions: list[KeycloakResource] = Field(
+    permissions: list[KeycloakResourcePermission] = Field(
         default_factory=list, description="A list of resources the user has been authorized to access."
     )
 

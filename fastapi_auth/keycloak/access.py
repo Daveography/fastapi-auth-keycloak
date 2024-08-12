@@ -7,7 +7,7 @@ from .resource_access import KeycloakResourceAccess
 
 class KeycloakAccess(BaseModel):
     """
-    Holds user authorization information from Keycloak.
+    Holds user access and authorization information from Keycloak.
     """
 
     scope: str = Field(description="A list of scopes the user has been authorized to access")

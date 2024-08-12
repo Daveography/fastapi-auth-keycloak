@@ -4,8 +4,8 @@ from starlette.authentication import AuthCredentials
 from typing_extensions import Any, Optional
 
 from .access import KeycloakAccess
-from .authorization import KeycloakAuthorization
 from .resource_access import KeycloakResourceAccess
+from .resource_permission import KeycloakResourcePermission
 
 try:
     from keycloak import KeycloakOpenID
@@ -32,9 +32,9 @@ class KeycloakAuthCredentials(AuthCredentials):
         return self.__access.resource_access
 
     @property
-    def authorization(self) -> Optional[KeycloakAuthorization]:
+    def permissions(self) -> list[KeycloakResourcePermission]:
         """The authorization permissions that the user has"""
-        return self.__access.authorization
+        return self.__access.authorization.permissions if self.__access.authorization is not None else []
 
     def has_client(self, client: str) -> bool:
         """

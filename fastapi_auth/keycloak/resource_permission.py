@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import Optional
 
 
-class KeycloakResource(BaseModel):
+class KeycloakResourcePermission(BaseModel):
     """
     A representation of an authorization resource in Keycloak.
     """
