@@ -5,12 +5,11 @@ from jwcrypto.common import JWException
 from starlette.authentication import AuthenticationBackend, AuthenticationError
 from starlette.datastructures import Secret
 from starlette.requests import HTTPConnection
-from typing_extensions import Any, Callable, Literal, Optional, Union
+from typing_extensions import Any, Callable, Optional, Union
 
 from ..auth_header import AuthenticationHeader
 from ..public_key import PublicKey
 from .auth_credentials import KeycloakAuthCredentials
-from .token_cache import TokenCache
 from .user import KeycloakUser
 
 try:
@@ -35,7 +34,7 @@ class KeycloakAuthBackend(AuthenticationBackend):
         client_secret: Secret,
         audience: Union[str, Iterable[str]],
         authentication_required: bool = True,
-        uma_authorization: Optional[Literal["ticket", "permission"]] = None,
+        use_uma_authorization: bool = False,
         user_factory: Callable[[dict[str, Any]], KeycloakUser] = KeycloakUser.model_validate,
     ) -> None:
         """
@@ -49,10 +48,8 @@ class KeycloakAuthBackend(AuthenticationBackend):
             audience (str | Iterable[str]): The expected audience(s) for the token for verification.
             authentication_required (bool, optional): When `True`, an `AuthenticationError` is raised if Authentication
                 is not provided; otherwise will permit the request to complete unauthenticated. Defaults to `True`.
-            uma_authorization (Literal["ticket", "permission"] |, optional): If provided, specifies the type of
-                authorization to use for User-Managed Access (UMA); if set to `ticket`, the backend will obtain and
-                cache a `uma-ticket` from Keycloak, while `permission` will enable the returned
-                `KeycloakAuthCredentials` to query Keycloak for any specific permissions requested.
+            use_uma_authorization (bool, optional): If `True`, the returned `KeycloakAuthCredentials` will query
+                Keycloak for any specific permissions requested if not provided in the JWT.
             user_factory (Callable[[Dict[str, Any]], KeycloakUser], optional): A method to be called with the decoded
             JWT as the sole parameter in order to construct the user object. Defaults to `KeycloakUser.model_validate`.
         """
@@ -69,10 +66,8 @@ class KeycloakAuthBackend(AuthenticationBackend):
         self.__algorithms = self.__config["id_token_signing_alg_values_supported"]
         self.__authentication_required = authentication_required
         self.__public_key = jwk.JWK.from_pem(PublicKey(self.__keycloak.public_key()).encode())
-        self.__uma_authorization = uma_authorization
+        self.__use_uma_authorization = use_uma_authorization
         self.__user_factory = user_factory
-
-        self.__token_cache = TokenCache()
 
     async def authenticate(self, conn: HTTPConnection) -> Optional[tuple[KeycloakAuthCredentials, KeycloakUser]]:
         auth_header = AuthenticationHeader.get_from(conn.headers)
@@ -98,23 +93,6 @@ class KeycloakAuthBackend(AuthenticationBackend):
             raise AuthenticationError(err)
 
         user = self.__user_factory(token)
-
-        if "authorization" not in token and self.__uma_authorization == "ticket":
-            token = await self.__get_uma_token(token)
-
-        auth_cred = KeycloakAuthCredentials(
-            token, self.__keycloak if self.__uma_authorization == "permission" else None
-        )
+        auth_cred = KeycloakAuthCredentials(token, self.__keycloak if self.__use_uma_authorization else None)
 
         return auth_cred, user
-
-    async def __get_uma_token(self, token: dict[str, Any]) -> dict[str, Any]:
-        token_session_id = token["sid"]
-
-        if token_session_id in self.__token_cache:
-            return self.__token_cache[token_session_id]
-
-        permissions = await self.__keycloak.a_uma_permissions(token)
-        self.__token_cache[token_session_id] = permissions
-
-        return permissions
