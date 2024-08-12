@@ -34,7 +34,7 @@ class KeycloakAuthBackend(AuthenticationBackend):
         client_secret: Secret,
         audience: Union[str, Iterable[str]],
         authentication_required: bool = True,
-        use_uma_authorization: bool = False,
+        query_uma_authorization: bool = False,
         user_factory: Callable[[dict[str, Any]], KeycloakUser] = KeycloakUser.model_validate,
     ) -> None:
         """
@@ -66,7 +66,7 @@ class KeycloakAuthBackend(AuthenticationBackend):
         self.__algorithms = self.__config["id_token_signing_alg_values_supported"]
         self.__authentication_required = authentication_required
         self.__public_key = jwk.JWK.from_pem(PublicKey(self.__keycloak.public_key()).encode())
-        self.__use_uma_authorization = use_uma_authorization
+        self.__query_uma_authorization = query_uma_authorization
         self.__user_factory = user_factory
 
     async def authenticate(self, conn: HTTPConnection) -> Optional[tuple[KeycloakAuthCredentials, KeycloakUser]]:
@@ -93,6 +93,6 @@ class KeycloakAuthBackend(AuthenticationBackend):
             raise AuthenticationError(err)
 
         user = self.__user_factory(token)
-        auth_cred = KeycloakAuthCredentials(token, self.__keycloak if self.__use_uma_authorization else None)
+        auth_cred = KeycloakAuthCredentials(token, self.__keycloak if self.__query_uma_authorization else None)
 
         return auth_cred, user

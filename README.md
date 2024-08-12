@@ -83,9 +83,7 @@ def get_no_homers_data(request: Request):
 #### Keycloak Authorization / UMA
 This module supports using Keycloak Authorization to secure resources via the returned `KeycloakAuthCredentials` object, provided via `Request.auth`. Any `uma-ticket` token is accepted by default.
 
-Additionally, two options are provided for validating authorization access if the incoming token does not contain authorization permission claims:
-- `ticket`: The backend will contact the Keycloak server to obtain a `uma-ticket` (containing a list of all authorization permissions the user has) on the user's behalf when first authenticating a request; this token will be cached until the ticket expires, after which the backend will need to obtain a new one on the next request.
-- `permission`: Validating access via the `KeycloakAuthCredentials` will query the Keycloak server on demand to determine if the user is authorized to access the requested resource.
+You can also enable the `query_uma_authorization` option, which allows the `KeycloakAuthCredentials` to query the Keycloak server on demand to determine if the user is authorized to access the requested resource if the current token is missing authorization information.
 
 ```python
 from fastapi import FastAPI, HTTPException, Request, status
@@ -100,7 +98,7 @@ backend = KeycloakAuthBackend(
     client_id="70a82a5a-b671-4acb-9ecf-b5dcce0305e3",
     client_secret=Secret("<client-secret>"),
     audience="my_aud",
-    uma_authorization="ticket" # or "permissions"
+    query_uma_authorization=True,
 )
 
 app = FastAPI()
