@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 from fastapi_auth.keycloak import KeycloakAuthCredentials, KeycloakResourcePermission
@@ -12,11 +13,12 @@ class KeycloakUMAProtocolTests(unittest.TestCase):
 
     def test_should_implement_uma_auth_credentials_protocol(self):
         auth = KeycloakAuthCredentials(
+            credential=MagicMock(),
             token={
                 "sub": str(uuid4()),
                 "email": "me@alphalayer.ai",
                 "preferred_username": "my_user",
                 "scope": "profile email",
-            }
+            },
         )
         self.assertIsInstance(auth, proto.UMAAuthCredentials)

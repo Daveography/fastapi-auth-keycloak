@@ -86,13 +86,17 @@ class KeycloakAuthBackend(AuthenticationBackend):
                 auth_header.credential,
                 key=self.__public_key,
                 algs=self.__algorithms,
-                check_claims={"aud": self.__audience},
+                check_claims={"exp": None, "aud": self.__audience},
             )
 
         except JWException as err:
             raise AuthenticationError(err)
 
         user = self.__user_factory(token)
-        auth_cred = KeycloakAuthCredentials(token, self.__keycloak if self.__query_uma_authorization else None)
+        auth_cred = KeycloakAuthCredentials(
+            credential=auth_header.credential,
+            token=token,
+            keycloak=self.__keycloak if self.__query_uma_authorization else None,
+        )
 
         return auth_cred, user

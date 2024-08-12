@@ -1,4 +1,5 @@
 import unittest
+from datetime import datetime, timezone
 from unittest import mock
 
 from fastapi import FastAPI
@@ -87,6 +88,7 @@ class KeycloakBackendIntegrationTests(unittest.TestCase):
                 "sid": "2368dcf2-e3af-468d-9bf6-5f12baeb5442",
                 "sub": "8dd881da-8522-4f33-9674-29a2c33474f0",
                 "scope": "profile email",
+                "exp": datetime.now(tz=timezone.utc).timestamp() + 300,
             }
         )
         response = self.client.get("/", headers={"Authorization": f"Bearer {token}"})
@@ -103,6 +105,7 @@ class KeycloakBackendIntegrationTests(unittest.TestCase):
                 "sid": "2368dcf2-e3af-468d-9bf6-5f12baeb5442",
                 "sub": "8dd881da-8522-4f33-9674-29a2c33474f0",
                 "scope": "profile email",
+                "exp": datetime.now(tz=timezone.utc).timestamp() + 300,
             }
         )
         response = self.client.get("/", headers={"Authorization": f"Bearer {token}"})
@@ -123,6 +126,7 @@ class KeycloakBackendIntegrationTests(unittest.TestCase):
             "sid": "2368dcf2-e3af-468d-9bf6-5f12baeb5442",
             "sub": "8dd881da-8522-4f33-9674-29a2c33474f0",
             "scope": "profile email",
+            "exp": datetime.now(tz=timezone.utc).timestamp() + 300,
         }
 
         invalid_jwt = jwt.JWT(header={"alg": "HS256"}, claims=valid_claims)
@@ -142,6 +146,7 @@ class KeycloakBackendIntegrationTests(unittest.TestCase):
             "sid": "2368dcf2-e3af-468d-9bf6-5f12baeb5442",
             "sub": "8dd881da-8522-4f33-9674-29a2c33474f0",
             "scope": "profile email",
+            "exp": datetime.now(tz=timezone.utc).timestamp() + 300,
         }
 
         invalid_jwt = jwt.JWT(header={"alg": "RS256"}, claims=valid_claims)
@@ -150,6 +155,23 @@ class KeycloakBackendIntegrationTests(unittest.TestCase):
         response = self.client.get("/", headers={"Authorization": f"Bearer {invalid_jwt.serialize()}"})
         self.assertEqual(400, response.status_code)
         self.assertIn("Verification failed for all signatures", response.text)
+
+    def test_should_fail_with_expired_token(self):
+        expired_token = self._jwt(
+            {
+                "aud": "alphalayer",
+                "email": "dave@alphalayer.ai",
+                "name": "Dave Sutherland",
+                "preferred_username": "Dave",
+                "sid": "2368dcf2-e3af-468d-9bf6-5f12baeb5442",
+                "sub": "8dd881da-8522-4f33-9674-29a2c33474f0",
+                "scope": "profile email",
+                "exp": datetime.now(tz=timezone.utc).timestamp() - 90,
+            }
+        )
+        response = self.client.get("/", headers={"Authorization": f"Bearer {expired_token}"})
+        self.assertEqual(400, response.status_code)
+        self.assertIn("Expired at", response.text)
 
     def _jwt(self, claims: dict[str, Any]) -> str:
         token = jwt.JWT(header={"alg": "RS256"}, claims=claims)

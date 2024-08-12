@@ -1,5 +1,3 @@
-import json
-
 from starlette.authentication import AuthCredentials
 from typing_extensions import Any, Optional
 
@@ -20,8 +18,8 @@ class KeycloakAuthCredentials(AuthCredentials):
     starlette.authentication.AuthCredentials-compatible class enhanced for Keycloak user authorization.
     """
 
-    def __init__(self, token: dict[str, Any], keycloak: Optional[KeycloakOpenID] = None) -> None:
-        self.__token = json.dumps(token)
+    def __init__(self, credential: str, token: dict[str, Any], keycloak: Optional[KeycloakOpenID] = None) -> None:
+        self.__credential = credential
         self.__access = KeycloakAccess.model_validate(token)
         super().__init__(self.__access.scopes)
         self.__keycloak = keycloak
@@ -81,6 +79,6 @@ class KeycloakAuthCredentials(AuthCredentials):
 
         if self.__keycloak is not None:
             permission = resource_name if scope is None else f"{resource_name}#{scope}"
-            return self.__keycloak.has_uma_access(self.__token, permission).is_authorized
+            return self.__keycloak.has_uma_access(self.__credential, permission).is_authorized
 
         return False
