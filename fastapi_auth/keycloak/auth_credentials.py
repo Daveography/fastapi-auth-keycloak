@@ -82,3 +82,29 @@ class KeycloakAuthCredentials(AuthCredentials):
             return self.__keycloak.has_uma_access(self.__credential, permission).is_authorized
 
         return False
+
+    def has_all_permissions(self, resources: dict[str, list[str]]) -> bool:
+        """
+        Does the user have authorized access to all the specified resources and scopes?
+
+        Args:
+            resources (dict[str, list[str]]): A dictionary of resource names and scopes to check.
+
+        Returns:
+            bool: True if the user has permission to access the specified resource (with the specified scope if
+                provided).
+        """
+
+        if self.__access.has_authorization_claim():
+            if all(
+                [
+                    [self.__access.has_permission(resource_name, scope) for scope in resources[resource_name]]
+                    for resource_name in resources
+                ]
+            ):
+                return True
+
+        if self.__keycloak is not None:
+            return self.__keycloak.has_uma_access(self.__credential, resources).is_authorized
+
+        return False

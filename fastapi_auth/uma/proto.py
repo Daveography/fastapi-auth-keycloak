@@ -53,3 +53,17 @@ class UMAAuthCredentials(Protocol):
         """
 
         ...
+
+    def has_all_permissions(self, resources: dict[str, list[str]]) -> bool:
+        """
+        Does the user have authorized access to all the specified resources and scopes?
+
+        Args:
+            resources (dict[str, list[str]]): A dictionary of resource names and scopes to check.
+
+        Returns:
+            bool: True if the user has permission to access the specified resource (with the specified scope if
+                provided).
+        """
+
+        ...
