@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from starlette.datastructures import Headers
-from typing_extensions import Self
+from typing_extensions import Optional, Self
 
 
 class AuthenticationHeader(BaseModel):
@@ -10,7 +10,7 @@ class AuthenticationHeader(BaseModel):
     credential: str
 
     @classmethod
-    def get_from(cls, headers: Headers) -> Self | None:
+    def get_from(cls, headers: Headers) -> Optional[Self]:
         if "Authorization" not in headers:
             return None
 
