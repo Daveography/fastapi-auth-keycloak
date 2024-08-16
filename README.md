@@ -21,7 +21,8 @@ poetry add --source alphalayer fastapi-auth[keycloak]
 
 ```python
 from fastapi import FastAPI, HTTPException, Request, status
-from fastapi_auth import JWTUser, JWTAuthBackend, PublicKey
+from fastapi_auth import PublicKey
+from fastapi_auth.jwt import JWTUser, JWTAuthBackend
 from starlette.middleware import Middleware
 from starlette.middleware.authentication import AuthenticationMiddleware
 
@@ -44,7 +45,7 @@ def get_current_user_identity(request: Request):
 
 ```python
 from fastapi import FastAPI, HTTPException, Request, status
-from fastapi_auth import KeycloakUser, KeycloakAuthBackend
+from fastapi_auth.keycloak import KeycloakUser, KeycloakAuthBackend
 from starlette.datastructures import Secret
 from starlette.middleware import Middleware
 from starlette.middleware.authentication import AuthenticationMiddleware
@@ -87,7 +88,7 @@ You can also enable the `query_uma_authorization` option, which allows the `Keyc
 
 ```python
 from fastapi import FastAPI, HTTPException, Request, status
-from fastapi_auth import KeycloakUser, KeycloakAuthBackend
+from fastapi_auth.keycloak import KeycloakUser, KeycloakAuthBackend
 from starlette.datastructures import Secret
 from starlette.middleware import Middleware
 from starlette.middleware.authentication import AuthenticationMiddleware
@@ -114,7 +115,21 @@ def get_privileged_data(request: Request):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "User not authenticated.")
 
     return {"What privilege!"}
+```
 
+FastAPI-Auth also provides a `UMAAuthorized` class that can be used as a FastAPI dependency to authorize requests:
+
+```python
+from fastapi import Depends
+from fastapi_auth.uma import UMAAuthorized
+from typing_extensions import Annotated
+
+@app.post("/privileged/area")
+def add_privileged_data(authorized: Annotated[UMAAuthorized, Depends(UMAAuthorized("privileged_data", "privileged_data:write"))]):
+    # Request will fail if the user is not authorized, so you can just jump straight into the write logic here.
+    # You can also access the user and auth objects from the injected object:
+    user_id = authorized.user.identity
+    scopes = authorized.auth.scopes
 ```
 
 ## Contributing
