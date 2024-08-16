@@ -5,7 +5,7 @@ from uuid import uuid4
 from starlette.datastructures import Headers
 from starlette.requests import HTTPConnection
 
-from fastapi_auth import KeycloakAuthBackend
+from fastapi_auth.keycloak import KeycloakAuthBackend
 
 
 class KeycloakUserTests(unittest.IsolatedAsyncioTestCase):

@@ -5,7 +5,7 @@ from uuid import uuid4
 from starlette.datastructures import Headers
 from starlette.requests import HTTPConnection
 
-from fastapi_auth import KeycloakAuthBackend, KeycloakUser
+from fastapi_auth.keycloak import KeycloakAuthBackend, KeycloakUser
 
 rs_public_key = (
     "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAu1SU1LfVLPHCozMxH2Mo"

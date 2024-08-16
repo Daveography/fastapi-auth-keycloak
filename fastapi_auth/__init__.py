@@ -1,6 +1,5 @@
-from .jwt import JWTAuthBackend, JWTUser
-from .keycloak import KeycloakAuthBackend, KeycloakUser
+from . import jwt, keycloak, uma
 from .public_key import PublicKey
 from .user import APIUser
 
-__all__ = ["JWTAuthBackend", "JWTUser", "KeycloakAuthBackend", "KeycloakUser", "APIUser", "PublicKey"]
+__all__ = ["jwt", "keycloak", "uma", "APIUser", "PublicKey"]

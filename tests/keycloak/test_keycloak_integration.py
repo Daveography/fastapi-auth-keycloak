@@ -8,7 +8,7 @@ from jwcrypto import jwk, jwt
 from starlette.middleware.authentication import AuthenticationMiddleware
 from typing_extensions import Any
 
-from fastapi_auth import KeycloakAuthBackend
+from fastapi_auth.keycloak import KeycloakAuthBackend
 
 # Keys generated from https://jwt.io/
 rs_public_key = """
