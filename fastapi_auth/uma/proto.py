@@ -34,11 +34,6 @@ class UMAAuthCredentials(Protocol):
         """A list of scopes the user has been authorized to access."""
         ...
 
-    @property
-    def permissions(self) -> list[UMAResourcePermission]:
-        """A list of resource permissions that the user has been granted."""
-        ...
-
     def has_permission(self, resource_name: str, scope: Optional[str] = None) -> bool:
         """
         Does the user have authorized access to the specified resource name (with optional scope)?
@@ -54,12 +49,9 @@ class UMAAuthCredentials(Protocol):
 
         ...
 
-    def get_all_permissions(self) -> list[UMAResourcePermission]:
+    def load_permissions(self) -> None:
         """
-        Returns all authorization permissions the user has been granted.
-
-        Returns:
-            list[UMAResourcePermission]: A list of all authorization permissions the user has been granted.
+        Loads all authorization permissions the user has been granted from the backend (if configured).
         """
 
         ...

@@ -3,8 +3,6 @@ from typing_extensions import Any, Optional
 
 from .access import KeycloakAccess
 from .authorization import KeycloakAuthorization
-from .resource_access import KeycloakResourceAccess
-from .resource_permission import KeycloakResourcePermission
 
 try:
     from keycloak import KeycloakOpenID
@@ -24,16 +22,6 @@ class KeycloakAuthCredentials(AuthCredentials):
         self.__access = KeycloakAccess.model_validate(token)
         super().__init__(self.__access.scopes)
         self.__keycloak = keycloak
-
-    @property
-    def resource_access(self) -> Optional[KeycloakResourceAccess]:
-        """The client role accesses that the user has"""
-        return self.__access.resource_access
-
-    @property
-    def permissions(self) -> list[KeycloakResourcePermission]:
-        """The authorization permissions that the user has"""
-        return self.__access.authorization.permissions if self.__access.authorization is not None else []
 
     def has_client(self, client: str) -> bool:
         """
@@ -84,16 +72,11 @@ class KeycloakAuthCredentials(AuthCredentials):
 
         return False
 
-    def get_all_permissions(self) -> list[KeycloakResourcePermission]:
+    def load_permissions(self) -> None:
         """
-        Returns all authorization permissions the user has been granted.
-
-        Returns:
-            list[KeycloakResourcePermission]: A list of all authorization permissions the user has been granted.
+        Loads all authorization permissions the user has been granted from the backend (if configured).
         """
 
         if not self.__access.has_authorization_claim() and self.__keycloak is not None:
             permissions = self.__keycloak.uma_permissions(self.__credential)
             self.__access.authorization = KeycloakAuthorization.model_validate({"permissions": permissions})
-
-        return self.permissions
