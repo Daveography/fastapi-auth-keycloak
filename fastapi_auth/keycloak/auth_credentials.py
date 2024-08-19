@@ -2,6 +2,7 @@ from starlette.authentication import AuthCredentials
 from typing_extensions import Any, Optional
 
 from .access import KeycloakAccess
+from .authorization import KeycloakAuthorization
 from .resource_access import KeycloakResourceAccess
 from .resource_permission import KeycloakResourcePermission
 
@@ -83,28 +84,16 @@ class KeycloakAuthCredentials(AuthCredentials):
 
         return False
 
-    def has_all_permissions(self, resources: dict[str, list[str]]) -> bool:
+    def get_all_permissions(self) -> list[KeycloakResourcePermission]:
         """
-        Does the user have authorized access to all the specified resources and scopes?
-
-        Args:
-            resources (dict[str, list[str]]): A dictionary of resource names and scopes to check.
+        Returns all authorization permissions the user has been granted.
 
         Returns:
-            bool: True if the user has permission to access the specified resource (with the specified scope if
-                provided).
+            list[KeycloakResourcePermission]: A list of all authorization permissions the user has been granted.
         """
 
-        if self.__access.has_authorization_claim():
-            if all(
-                [
-                    [self.__access.has_permission(resource_name, scope) for scope in resources[resource_name]]
-                    for resource_name in resources
-                ]
-            ):
-                return True
+        if not self.__access.has_authorization_claim() and self.__keycloak is not None:
+            permissions = self.__keycloak.uma_permissions(self.__credential)
+            self.__access.authorization = KeycloakAuthorization.model_validate({"permissions": permissions})
 
-        if self.__keycloak is not None:
-            return self.__keycloak.has_uma_access(self.__credential, resources).is_authorized
-
-        return False
+        return self.permissions

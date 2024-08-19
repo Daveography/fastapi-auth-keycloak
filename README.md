@@ -125,7 +125,9 @@ from fastapi_auth.uma import UMAAuthorized
 from typing_extensions import Annotated
 
 @app.post("/privileged/area")
-def add_privileged_data(authorized: Annotated[UMAAuthorized, Depends(UMAAuthorized("privileged_data", "privileged_data:write"))]):
+def add_privileged_data(
+    authorized: Annotated[UMAAuthorized, Depends(UMAAuthorized("privileged_data", "privileged_data:write"))]
+):
     # Request will fail if the user is not authorized, so you can just jump straight into the write logic here.
     # You can also access the user and auth objects from the injected object:
     user_id = authorized.user.identity
