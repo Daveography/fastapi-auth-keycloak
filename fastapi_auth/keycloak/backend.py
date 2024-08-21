@@ -13,7 +13,7 @@ from .auth_credentials import KeycloakAuthCredentials
 from .user import KeycloakUser
 
 try:
-    from keycloak import KeycloakOpenID
+    from keycloak import KeycloakOpenIDConnection
 except ImportError:
     raise RuntimeError(
         "Install the package with the `keycloak` extra (fastapi-auth[keycloak]) to use the KeycloakAuthBackend"
@@ -34,7 +34,6 @@ class KeycloakAuthBackend(AuthenticationBackend):
         client_secret: Secret,
         audience: Union[str, Iterable[str]],
         authentication_required: bool = True,
-        query_uma_authorization: bool = False,
         user_factory: Callable[[dict[str, Any]], KeycloakUser] = KeycloakUser.model_validate,
     ) -> None:
         """
@@ -48,25 +47,24 @@ class KeycloakAuthBackend(AuthenticationBackend):
             audience (str | Iterable[str]): The expected audience(s) for the token for verification.
             authentication_required (bool, optional): When `True`, an `AuthenticationError` is raised if Authentication
                 is not provided; otherwise will permit the request to complete unauthenticated. Defaults to `True`.
-            use_uma_authorization (bool, optional): If `True`, the returned `KeycloakAuthCredentials` will query
-                Keycloak for any specific permissions requested if not provided in the JWT.
             user_factory (Callable[[Dict[str, Any]], KeycloakUser], optional): A method to be called with the decoded
-            JWT as the sole parameter in order to construct the user object. Defaults to `KeycloakUser.model_validate`.
+                JWT as the sole parameter in order to construct the user object. Defaults to
+                `KeycloakUser.model_validate`.
         """
 
-        self.__keycloak = KeycloakOpenID(
+        self.__connection = KeycloakOpenIDConnection(
             server_url=url,
             realm_name=realm,
             client_id=client_id,
             client_secret_key=str(client_secret),
         )
+        self.__keycloak = self.__connection.keycloak_openid
 
         self.__audience = audience
         self.__config = self.__keycloak.well_known()
         self.__algorithms = self.__config["id_token_signing_alg_values_supported"]
         self.__authentication_required = authentication_required
         self.__public_key = jwk.JWK.from_pem(PublicKey(self.__keycloak.public_key()).encode())
-        self.__query_uma_authorization = query_uma_authorization
         self.__user_factory = user_factory
 
     async def authenticate(self, conn: HTTPConnection) -> Optional[tuple[KeycloakAuthCredentials, KeycloakUser]]:
@@ -82,6 +80,7 @@ class KeycloakAuthBackend(AuthenticationBackend):
             raise AuthenticationError("Invalid Authorization header")
 
         try:
+            # Don't need to use the async method as we're providing the public key
             token = self.__keycloak.decode_token(
                 auth_header.credential,
                 key=self.__public_key,
@@ -93,10 +92,6 @@ class KeycloakAuthBackend(AuthenticationBackend):
             raise AuthenticationError(err)
 
         user = self.__user_factory(token)
-        auth_cred = KeycloakAuthCredentials(
-            credential=auth_header.credential,
-            token=token,
-            keycloak=self.__keycloak if self.__query_uma_authorization else None,
-        )
+        auth_cred = KeycloakAuthCredentials(token=token, keycloak=self.__connection)
 
         return auth_cred, user

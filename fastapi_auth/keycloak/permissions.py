@@ -1,13 +1,13 @@
 from pydantic import BaseModel, ConfigDict, Field, computed_field
-from typing_extensions import Optional
+from typing_extensions import Optional, Union
 
 from .authorization import KeycloakAuthorization
 from .resource_access import KeycloakResourceAccess
 
 
-class KeycloakAccess(BaseModel):
+class KeycloakPermissions(BaseModel):
     """
-    Holds user access and authorization information from Keycloak.
+    Holds user authorization permissions information from Keycloak.
     """
 
     scope: str = Field(description="A list of scopes the user has been authorized to access")
@@ -60,29 +60,25 @@ class KeycloakAccess(BaseModel):
 
         return False
 
-    def has_authorization_claim(self) -> bool:
+    def has_authorization(
+        self,
+        resource_name: Optional[str] = None,
+        resource_id: Optional[str] = None,
+        scope: Optional[Union[str, list[str]]] = None,
+    ) -> bool:
         """
-        Was the authorization claim provided?
-
-        Returns:
-            bool: True if the user has an authorization claim, otherwise False
-        """
-
-        return self.authorization is not None
-
-    def has_permission(self, resource_name: str, scope: Optional[str] = None) -> bool:
-        """
-        Does the user have authorized access to the specified resource name (with optional scope)?
+        Does the user have authorized access to the specified resource name (with optional scope(s))?
 
         Args:
             resource_name (str): The name of the resource to check.
-            scope (str, optional): Also check against a specific scope.
+            scope (str | list[str], optional): Also check against one or more specific scopes; if multiple scopes are
+                provided, the user must have access to all of them. Defaults to None.
 
         Returns:
-            bool: True if the user has permission to access the specified resource (with the specified scope if
-                    provided).
+            bool: True if the user has permission to access the specified resource (with the all of the specified
+                scopes if provided).
         """
 
-        return self.authorization is not None and self.authorization.has_permission(resource_name, scope)
+        return self.authorization is not None and self.authorization.has_permission(resource_name, resource_id, scope)
 
     model_config = ConfigDict(frozen=True)

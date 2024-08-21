@@ -1,15 +1,13 @@
-from collections.abc import Iterable
-
 from starlette import status
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
-from typing_extensions import Any, Callable, Optional, Self, Union
+from typing_extensions import Optional, Self, Union
 
 from ..user import APIUser
 from .proto import UMAAuthCredentials
 
 
-class UMAAuthorized:
+class UMAAuthorize:
     """
     Ensures the authenticated user is authorized to access the specified resource (with optional scopes) using User-
     Managed Access (UMA). Required UMA-enabled backend like `KeycloakAuthBackend`.
@@ -19,12 +17,7 @@ class UMAAuthorized:
     `Annotated[Authorized, Depends(Authorized("<resource name>", "<scope>"))]`
     """
 
-    def __init__(
-        self,
-        resource: str,
-        scope: Optional[Union[str, list[str]]] = None,
-        decision: Callable[[Iterable[Any]], bool] = all,
-    ):
+    def __init__(self, resource: str, scope: Optional[Union[str, list[str]]] = None):
         """
         Authorize the user to access the specified resource.
 
@@ -44,21 +37,21 @@ class UMAAuthorized:
         else:
             self.scope = scope
 
-        self.decision = decision
-
-    def __call__(self, request: Request) -> Self:
+    async def __call__(self, request: Request) -> Self:
         if "user" not in request.scope or not request.user:
             raise HTTPException(status.HTTP_401_UNAUTHORIZED, "User not authenticated")
 
         self.__user = request.user
 
         if "auth" not in request.scope or not request.auth:
-            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "User not authorized")
+            raise RuntimeError("Backend did not provide AuthCredentials")
 
-        self.__auth: UMAAuthCredentials = request.auth
+        if not isinstance(request.auth, UMAAuthCredentials):
+            raise RuntimeError("Backend did not provide UMA-compatible AuthCredentials")
 
-        if not self.decision([self.__auth.has_permission(self.resource, scope) for scope in self.scope]):
-            raise HTTPException(status.HTTP_403_FORBIDDEN, "User does not have permission to access resource")
+        self.__auth = request.auth
+
+        await self.__auth.authorize(self.resource, self.scope)
 
         return self
 

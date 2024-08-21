@@ -4,7 +4,7 @@ Provides Starlette/FastAPI Authentication backend modules for these Authenticati
 - JSON Web Token (JWT)
 - Keycloak JWT
 
-# Install
+## Install
 ```bash
 poetry source add --priority=supplemental alphalayer https://pkgs.dev.azure.com/alphalayerai/Packages/_packaging/Python/pypi/simple/
 poetry add --source alphalayer fastapi-auth
@@ -81,10 +81,10 @@ def get_no_homers_data(request: Request):
     return {"Welcome Homer Glumplich!"}
 ```
 
-#### Keycloak Authorization / UMA
-This module supports using Keycloak Authorization to secure resources via the returned `KeycloakAuthCredentials` object, provided via `Request.auth`. Any `uma-ticket` token is accepted by default.
+#### Keycloak UMA Authorization
+This module supports using [User-Managed Access (UMA) 2.0 Grant for OAuth 2.0 Authorization](https://docs.kantarainitiative.org/uma/wg/oauth-uma-grant-2.0-09.html) to authorize access to resources via the `KeycloakAuthCredentials` object, provided via `Request.auth`.
 
-You can also enable the `query_uma_authorization` option, which allows the `KeycloakAuthCredentials` to query the Keycloak server on demand to determine if the user is authorized to access the requested resource if the current token is missing authorization information.
+If the user's JWT does not currently authorize them to access the specified resource and scope(s) if provided, the `authorize` method will throw an HTTP 401 response with a `WWW-Authenticate` header to indicate to the client that they should obtain a UMA 2.0-compliant Requesting Party Token (RPT, of type `urn:ietf:params:oauth:grant-type:uma-ticket`) to be authorized to access the resource. See the [specification](https://docs.kantarainitiative.org/uma/wg/oauth-uma-grant-2.0-09.html) for details.
 
 ```python
 from fastapi import FastAPI, HTTPException, Request, status
@@ -99,7 +99,6 @@ backend = KeycloakAuthBackend(
     client_id="70a82a5a-b671-4acb-9ecf-b5dcce0305e3",
     client_secret=Secret("<client-secret>"),
     audience="my_aud",
-    query_uma_authorization=True,
 )
 
 app = FastAPI()
@@ -111,13 +110,21 @@ def get_current_user_identity(request: Request):
 
 @app.get("/privileged/area")
 def get_privileged_data(request: Request):
-    if not request.auth.has_permission(resource_name="privileged_data", scope="privileged_data:read"):
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "User not authenticated.")
-
+    # Assert user is authorized
+    request.auth.authorize(resource_name="privileged_data", scope="privileged_data:read")
     return {"What privilege!"}
 ```
 
-FastAPI-Auth also provides a `UMAAuthorized` class that can be used as a FastAPI dependency to authorize requests:
+You can also authorize by a specific Resource Id if you have it:
+
+```python
+@app.get("/privileged/area/{id}")
+def get_privileged_data(request: Request, id: str):
+    request.auth.authorize_by_id(resource_id=id, scope="privileged_data:read")
+    return {f"Looks like you are allowed to see area {id}!"}
+```
+
+FastAPI-Auth also provides a `UMAAuthorize` class that can be used as a FastAPI dependency to authorize endpoint resources:
 
 ```python
 from fastapi import Depends
@@ -126,9 +133,9 @@ from typing_extensions import Annotated
 
 @app.post("/privileged/area")
 def add_privileged_data(
-    authorized: Annotated[UMAAuthorized, Depends(UMAAuthorized("privileged_data", "privileged_data:write"))]
+    authorized: Annotated[UMAAuthorize, Depends(UMAAuthorize("privileged_data", "privileged_data:write"))]
 ):
-    # Request will fail if the user is not authorized, so you can just jump straight into the write logic here.
+    # The dependency has already asserted the user is authorized, so you can jump straight to your endpoint logic.
     # You can also access the user and auth objects from the injected object:
     user_id = authorized.user.identity
     scopes = authorized.auth.scopes

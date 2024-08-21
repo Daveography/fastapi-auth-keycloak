@@ -1,11 +1,12 @@
 from starlette.authentication import AuthCredentials
-from typing_extensions import Any, Optional
+from typing_extensions import Any, Never, Optional, Union
 
-from .access import KeycloakAccess
-from .authorization import KeycloakAuthorization
+from ..uma.exceptions import UMAAuthorizationRequired, UMAAuthorizationServerUnreachable
+from .permissions import KeycloakPermissions
 
 try:
-    from keycloak import KeycloakOpenID
+    from keycloak import KeycloakOpenIDConnection, KeycloakUMA
+    from keycloak.exceptions import KeycloakPostError, raise_error_from_response
 except ImportError:
     raise RuntimeError(
         "Install the package with the `keycloak` extra (fastapi-auth[keycloak]) to use the KeycloakAuthBackend"
@@ -17,11 +18,10 @@ class KeycloakAuthCredentials(AuthCredentials):
     starlette.authentication.AuthCredentials-compatible class enhanced for Keycloak user authorization.
     """
 
-    def __init__(self, credential: str, token: dict[str, Any], keycloak: Optional[KeycloakOpenID] = None) -> None:
-        self.__credential = credential
-        self.__access = KeycloakAccess.model_validate(token)
+    def __init__(self, token: dict[str, Any], keycloak: KeycloakOpenIDConnection) -> None:
+        self.__access = KeycloakPermissions.model_validate(token)
         super().__init__(self.__access.scopes)
-        self.__keycloak = keycloak
+        self.__uma = KeycloakUMA(keycloak)
 
     def has_client(self, client: str) -> bool:
         """
@@ -50,33 +50,92 @@ class KeycloakAuthCredentials(AuthCredentials):
 
         return self.__access.has_role(client, role)
 
-    def has_permission(self, resource_name: str, scope: Optional[str] = None) -> bool:
+    async def authorize(self, resource_name: str, scope: Optional[Union[str, list[str]]] = None) -> None:
         """
-        Does the user have authorized access to the specified resource name (with optional scope)?
+        Asserts authorized access to the specified resource name with optional scope(s).
+        Uses UMA 2.0 grant workflow: https://docs.kantarainitiative.org/uma/wg/oauth-uma-grant-2.0-09.html
 
         Args:
             resource_name (str): The name of the resource to check.
-            scope (str, optional): Also check against a specific scope.
+            scope (str | list[str], optional): Also check against one or more specific scopes; if multiple scopes are
+                provided, the user must have access to all of them. Defaults to None.
 
         Returns:
-            bool: True if the user has permission to access the specified resource (with the specified scope if
-                provided).
+            bool: True if the user has permission to access the specified resource (with the all of the specified
+                scopes if provided).
+
+        Raises:
+            KeycloakPostError: If the resource was not found on the authorization server.
+            HTTPException (401 Unauthorized with `WWW-Authenticate` header): If the user does not currently have
+                authorization; clients should use the provided header to request authorization according to UMA 2.0.
+            HTTPException (403 Forbidden): If the authorization server is unavailable.
         """
 
-        if self.__access.has_authorization_claim():
-            return self.__access.has_permission(resource_name, scope)
+        if self.__access.has_authorization(resource_name=resource_name, scope=scope):
+            return
 
-        if self.__keycloak is not None:
-            permission = resource_name if scope is None else f"{resource_name}#{scope}"
-            return self.__keycloak.has_uma_access(self.__credential, permission).is_authorized
+        resource_id = await self.__get_resource_id(resource_name)
 
-        return False
+        await self.authorize_by_id(resource_id, scope)
 
-    def load_permissions(self) -> None:
+    async def authorize_by_id(self, resource_id: str, scope: Optional[Union[str, list[str]]] = None) -> None:
         """
-        Loads all authorization permissions the user has been granted from the backend (if configured).
+        Asserts authorized access to the specified resource id with optional scope(s).
+        Uses UMA 2.0 grant workflow: https://docs.kantarainitiative.org/uma/wg/oauth-uma-grant-2.0-09.html
+
+        Args:
+            resource_id (str): The id of the resource to check.
+            scope (str | list[str], optional): Also check against one or more specific scopes; if multiple scopes are
+                provided, the user must have access to all of them. Defaults to None.
+
+        Returns:
+            bool: True if the user has permission to access the specified resource (with the all of the specified
+                scopes if provided).
+
+        Raises:
+            KeycloakPostError: If the resource was not found on the authorization server.
+            HTTPException (401 Unauthorized with `WWW-Authenticate` header): If the user does not currently have
+                authorization; clients should use the provided header to request authorization according to UMA 2.0.
+            HTTPException (403 Forbidden): If the authorization server is unavailable.
         """
 
-        if not self.__access.has_authorization_claim() and self.__keycloak is not None:
-            permissions = self.__keycloak.uma_permissions(self.__credential)
-            self.__access.authorization = KeycloakAuthorization.model_validate({"permissions": permissions})
+        if self.__access.has_authorization(resource_id=resource_id, scope=scope):
+            return
+
+        await self.__raise_authorization_required(resource_id, scope)
+
+    async def __raise_authorization_required(
+        self, resource_id: str, scope: Optional[Union[str, list[str]]] = None
+    ) -> Never:
+        if scope is None:
+            scope = []
+        if isinstance(scope, str):
+            scope = [scope]
+
+        realm_name = self.__uma.connection.realm_name
+
+        if not realm_name:
+            raise UMAAuthorizationServerUnreachable()
+
+        well_known = await self.__uma.a__fetch_well_known()
+        realm_url = well_known["issuer"]
+        permission_endpoint = well_known["permission_endpoint"]
+        ticket = await self.__get_permission_ticket(permission_endpoint, {resource_id: scope})
+
+        raise UMAAuthorizationRequired(realm=realm_name, as_uri=realm_url, ticket=ticket)
+
+    async def __get_resource_id(self, resource_name: str) -> str:
+        resource_ids = await self.__uma.a_resource_set_list_ids(exact_name=True, name=resource_name, first=0, maximum=1)
+
+        if not resource_ids:
+            raise KeycloakPostError("Resource name was not found")
+
+        return resource_ids[0]  # type: ignore
+
+    async def __get_permission_ticket(self, endpoint: str, permissions: dict[str, list[str]]) -> str:
+        data_raw = await self.__uma.connection.a_raw_post(endpoint, data=permissions)
+
+        try:
+            return raise_error_from_response(data_raw, KeycloakPostError)["ticket"]
+        except KeycloakPostError:
+            raise UMAAuthorizationServerUnreachable()

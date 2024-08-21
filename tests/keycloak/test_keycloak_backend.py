@@ -19,10 +19,11 @@ rs_public_key = (
 
 
 class KeycloakAuthBackendTests(unittest.IsolatedAsyncioTestCase):
-    @mock.patch("fastapi_auth.keycloak.backend.KeycloakOpenID")
+    @mock.patch("fastapi_auth.keycloak.backend.KeycloakOpenIDConnection")
     @mock.patch("fastapi_auth.keycloak.backend.jwk")
-    async def test_should_create_keycloak_user(self, mock_jwk: mock.MagicMock, mock_keycloak: mock.MagicMock):
-        mock_keycloak.return_value.public_key.return_value = rs_public_key
+    async def asyncSetUp(self, mock_jwk: mock.MagicMock, mock_connection: mock.MagicMock):
+        self.mock_keycloak = mock_connection.return_value.keycloak_openid
+        self.mock_keycloak.public_key.return_value = "<public key>"
         self.backend = KeycloakAuthBackend(
             url=mock.MagicMock(),
             realm=mock.MagicMock(),
@@ -31,8 +32,12 @@ class KeycloakAuthBackendTests(unittest.IsolatedAsyncioTestCase):
             audience=mock.MagicMock(),
         )
 
+        self.http_mock = mock.MagicMock(HTTPConnection)
+        self.http_mock.headers = Headers({"Authorization": "Bearer xzy123"})
+
+    async def test_should_create_keycloak_user(self):
         sub = str(uuid4())
-        mock_keycloak.return_value.decode_token.return_value = {
+        self.mock_keycloak.decode_token.return_value = {
             "sub": sub,
             "email": "me@alphalayer.ai",
             "preferred_username": "my_user",
@@ -50,16 +55,5 @@ class KeycloakAuthBackendTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual("my_user", user.display_name)
         self.assertTrue(user.is_authenticated)
 
-    @mock.patch("fastapi_auth.keycloak.backend.KeycloakOpenID")
-    @mock.patch("fastapi_auth.keycloak.backend.jwk")
-    async def test_should_get_public_key_from_keycloak(self, mock_jwk: mock.MagicMock, mock_keycloak: mock.MagicMock):
-        mock_keycloak.return_value.public_key.return_value = rs_public_key
-        self.backend = KeycloakAuthBackend(
-            url=mock.MagicMock(),
-            realm=mock.MagicMock(),
-            client_id=mock.MagicMock(),
-            client_secret=mock.MagicMock(),
-            audience=mock.MagicMock(),
-        )
-
-        mock_keycloak.return_value.public_key.assert_called_once()
+    async def test_should_get_public_key_from_keycloak(self):
+        self.mock_keycloak.public_key.assert_called_once()

@@ -13,7 +13,7 @@ class KeycloakUMAProtocolTests(unittest.TestCase):
 
     def test_should_implement_uma_auth_credentials_protocol(self):
         auth = KeycloakAuthCredentials(
-            credential=MagicMock(),
+            keycloak=MagicMock(),
             token={
                 "sub": str(uuid4()),
                 "email": "me@alphalayer.ai",

@@ -1,4 +1,4 @@
-from typing_extensions import Any, Optional, Protocol, runtime_checkable
+from typing_extensions import Any, Optional, Protocol, Union, runtime_checkable
 
 
 @runtime_checkable
@@ -34,24 +34,44 @@ class UMAAuthCredentials(Protocol):
         """A list of scopes the user has been authorized to access."""
         ...
 
-    def has_permission(self, resource_name: str, scope: Optional[str] = None) -> bool:
+    async def authorize(self, resource_name: str, scope: Optional[Union[str, list[str]]] = None) -> None:
         """
-        Does the user have authorized access to the specified resource name (with optional scope)?
+        Asserts authorized access to the specified resource name with optional scope(s).
+        Uses UMA 2.0 grant workflow: https://docs.kantarainitiative.org/uma/wg/oauth-uma-grant-2.0-09.html
 
         Args:
             resource_name (str): The name of the resource to check.
-            scope (str, optional): Also check against a specific scope.
+            scope (str | list[str], optional): Also check against one or more specific scopes; if multiple scopes are
+                provided, the user must have access to all of them. Defaults to None.
 
         Returns:
-            bool: True if the user has permission to access the specified resource (with the specified scope if
-                    provided).
+            bool: True if the user has permission to access the specified resource (with the all of the specified
+                scopes if provided).
+
+        Raises:
+            KeycloakPostError: If the resource was not found on the authorization server.
+            HTTPException (401 Unauthorized with `WWW-Authenticate` header): If the user does not currently have
+                authorization; clients should use the provided header to request authorization according to UMA 2.0.
+            HTTPException (403 Forbidden): If the authorization server is unavailable.
         """
 
         ...
 
-    def load_permissions(self) -> None:
+    async def authorize_by_id(self, resource_id: str, scope: Optional[Union[str, list[str]]] = None) -> None:
         """
-        Loads all authorization permissions the user has been granted from the backend (if configured).
+        Asserts authorized access to the specified resource id with optional scope(s).
+        Uses UMA 2.0 grant workflow: https://docs.kantarainitiative.org/uma/wg/oauth-uma-grant-2.0-09.html
+
+        Args:
+            resource_id (str): The id of the resource to check.
+            scope (str | list[str], optional): Also check against one or more specific scopes; if multiple scopes are
+                provided, the user must have access to all of them. Defaults to None.
+
+        Raises:
+            KeycloakPostError: If the resource was not found on the authorization server.
+            HTTPException (401 Unauthorized with `WWW-Authenticate` header): If the user does not currently have
+                authorization; clients should use the provided header to request authorization according to UMA 2.0.
+            HTTPException (403 Forbidden): If the authorization server is unavailable.
         """
 
         ...

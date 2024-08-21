@@ -5,6 +5,7 @@ from unittest import mock
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from jwcrypto import jwk, jwt
+from keycloak import KeycloakOpenID
 from starlette.middleware.authentication import AuthenticationMiddleware
 from typing_extensions import Any
 
@@ -56,27 +57,34 @@ dn/RsYEONbwQSjIfMPkvxF+8HQ==
 
 
 class KeycloakBackendIntegrationTests(unittest.TestCase):
-    @mock.patch("fastapi_auth.keycloak.backend.KeycloakOpenID.public_key")
-    @mock.patch("fastapi_auth.keycloak.backend.KeycloakOpenID.well_known")
-    def setUp(self, mock_well_known: mock.MagicMock, mock_public_key: mock.MagicMock):
-        mock_well_known.return_value = {"id_token_signing_alg_values_supported": ["RS256"]}
-        mock_public_key.return_value = rs_public_key
-        backend = KeycloakAuthBackend(
-            url=mock.MagicMock(),
-            realm=mock.MagicMock(),
+    @mock.patch("fastapi_auth.keycloak.backend.KeycloakOpenIDConnection")
+    def setUp(self, mock_connection: mock.MagicMock):
+        keycloak = KeycloakOpenID(
+            server_url=mock.MagicMock(),
+            realm_name=mock.MagicMock(),
             client_id=mock.MagicMock(),
-            client_secret=mock.MagicMock(),
-            audience=["alphalayer", "api"],
         )
+        mock_connection.return_value.keycloak_openid = keycloak
 
-        app = FastAPI()
-        app.add_middleware(AuthenticationMiddleware, backend=backend)
+        with mock.patch.multiple(keycloak, well_known=mock.DEFAULT, public_key=mock.DEFAULT) as mock_keycloak:
+            mock_keycloak["well_known"].return_value = {"id_token_signing_alg_values_supported": ["RS256"]}
+            mock_keycloak["public_key"].return_value = rs_public_key
+            backend = KeycloakAuthBackend(
+                url=mock.MagicMock(),
+                realm=mock.MagicMock(),
+                client_id=mock.MagicMock(),
+                client_secret=mock.MagicMock(),
+                audience=["alphalayer", "api"],
+            )
 
-        @app.get("/")
-        async def root():
-            return {"message": "Hello World"}
+            app = FastAPI()
+            app.add_middleware(AuthenticationMiddleware, backend=backend)
 
-        self.client = TestClient(app, raise_server_exceptions=False)
+            @app.get("/")
+            async def root():
+                return {"message": "Hello World"}
+
+            self.client = TestClient(app, raise_server_exceptions=False)
 
     def test_should_succeed_with_valid_token(self):
         token = self._jwt(

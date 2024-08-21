@@ -9,10 +9,10 @@ from fastapi_auth.keycloak import KeycloakAuthBackend
 
 
 class KeycloakUserTests(unittest.IsolatedAsyncioTestCase):
-    @mock.patch("fastapi_auth.keycloak.backend.KeycloakOpenID")
+    @mock.patch("fastapi_auth.keycloak.backend.KeycloakOpenIDConnection")
     @mock.patch("fastapi_auth.keycloak.backend.jwk")
-    async def asyncSetUp(self, mock_jwk: mock.MagicMock, mock_keycloak: mock.MagicMock):
-        self.mock_keycloak = mock_keycloak.return_value
+    async def asyncSetUp(self, mock_jwk: mock.MagicMock, mock_connection: mock.MagicMock):
+        self.mock_keycloak = mock_connection.return_value.keycloak_openid
         self.mock_keycloak.public_key.return_value = "<public key>"
         self.backend = KeycloakAuthBackend(
             url=mock.MagicMock(),
