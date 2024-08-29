@@ -103,30 +103,12 @@ class KeycloakAuthCredentials(AuthCredentials):
         if self.__access.has_authorization(resource_id=resource_id, scope=scope):
             return
 
-        await self.__raise_authorization_required(resource_id, scope)
-
-    async def __raise_authorization_required(
-        self, resource_id: str, scope: Optional[Union[str, list[str]]] = None
-    ) -> Never:
         if scope is None:
             scope = []
         if isinstance(scope, str):
             scope = [scope]
 
-        realm_name = self.__uma.connection.realm_name
-
-        if not realm_name:
-            raise UMAAuthorizationServerUnreachable()
-
-        well_known = await self.__uma.a__fetch_well_known()
-        as_uri = well_known["issuer"]
-        permission_endpoint = well_known["permission_endpoint"]
-        ticket_request = KeycloakPermissionTicketRequest(
-            [KeycloakResourceRequest(resource_id=resource_id, resource_scopes=scope)]
-        )
-        ticket = await self.__get_permission_ticket(permission_endpoint, ticket_request)
-
-        raise UMAAuthorizationRequired(realm=realm_name, as_uri=as_uri, ticket=ticket)
+        await self.__raise_authorization_required({resource_id: scope})
 
     async def __get_resource_id(self, resource_name: str) -> str:
         resource_ids = await self.__uma.a_resource_set_list_ids(exact_name=True, name=resource_name, first=0, maximum=1)
@@ -136,10 +118,29 @@ class KeycloakAuthCredentials(AuthCredentials):
 
         return resource_ids[0]  # type: ignore
 
+    async def __raise_authorization_required(self, resources: dict[str, list[str]]) -> Never:
+        try:
+            realm_name = self.__uma.connection.realm_name
+
+            if not realm_name:
+                raise RuntimeError("Keycloak realm name was not set")
+
+            well_known = await self.__uma.a__fetch_well_known()
+            as_uri = well_known["issuer"]
+            permission_endpoint = well_known["permission_endpoint"]
+            ticket_request = KeycloakPermissionTicketRequest(
+                [
+                    KeycloakResourceRequest(resource_id=resource_id, resource_scopes=scopes)
+                    for resource_id, scopes in resources.items()
+                ]
+            )
+            ticket = await self.__get_permission_ticket(permission_endpoint, ticket_request)
+
+        except Exception:
+            raise UMAAuthorizationServerUnreachable()
+
+        raise UMAAuthorizationRequired(realm=realm_name, as_uri=as_uri, ticket=ticket)
+
     async def __get_permission_ticket(self, endpoint: str, request: KeycloakPermissionTicketRequest) -> str:
         data_raw = await self.__uma.connection.a_raw_post(endpoint, data=request.model_dump_json())
-
-        try:
-            return raise_error_from_response(data_raw, KeycloakPostError)["ticket"]
-        except KeycloakPostError:
-            raise UMAAuthorizationServerUnreachable()
+        return raise_error_from_response(data_raw, KeycloakPostError)["ticket"]
