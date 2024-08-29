@@ -3,6 +3,7 @@ from typing_extensions import Any, Never, Optional, Union
 
 from ..uma.exceptions import UMAAuthorizationRequired, UMAAuthorizationServerUnreachable
 from .permissions import KeycloakPermissions
+from .ticket_request import KeycloakPermissionTicketRequest, KeycloakResourceRequest
 
 try:
     from keycloak import KeycloakOpenIDConnection, KeycloakUMA
@@ -118,22 +119,25 @@ class KeycloakAuthCredentials(AuthCredentials):
             raise UMAAuthorizationServerUnreachable()
 
         well_known = await self.__uma.a__fetch_well_known()
-        realm_url = well_known["issuer"]
+        as_uri = well_known["issuer"]
         permission_endpoint = well_known["permission_endpoint"]
-        ticket = await self.__get_permission_ticket(permission_endpoint, {resource_id: scope})
+        ticket_request = KeycloakPermissionTicketRequest(
+            [KeycloakResourceRequest(resource_id=resource_id, resource_scopes=scope)]
+        )
+        ticket = await self.__get_permission_ticket(permission_endpoint, ticket_request)
 
-        raise UMAAuthorizationRequired(realm=realm_name, as_uri=realm_url, ticket=ticket)
+        raise UMAAuthorizationRequired(realm=realm_name, as_uri=as_uri, ticket=ticket)
 
     async def __get_resource_id(self, resource_name: str) -> str:
         resource_ids = await self.__uma.a_resource_set_list_ids(exact_name=True, name=resource_name, first=0, maximum=1)
 
         if not resource_ids:
-            raise KeycloakPostError("Resource name was not found")
+            raise KeycloakPostError(f"Resource '{resource_name}' was not found")
 
         return resource_ids[0]  # type: ignore
 
-    async def __get_permission_ticket(self, endpoint: str, permissions: dict[str, list[str]]) -> str:
-        data_raw = await self.__uma.connection.a_raw_post(endpoint, data=permissions)
+    async def __get_permission_ticket(self, endpoint: str, request: KeycloakPermissionTicketRequest) -> str:
+        data_raw = await self.__uma.connection.a_raw_post(endpoint, data=request.model_dump_json())
 
         try:
             return raise_error_from_response(data_raw, KeycloakPostError)["ticket"]
