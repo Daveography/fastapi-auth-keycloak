@@ -10,11 +10,11 @@ from .proto import UMAAuthCredentials
 class UMAAuthorize:
     """
     Ensures the authenticated user is authorized to access the specified resource (with optional scopes) using User-
-    Managed Access (UMA). Required UMA-enabled backend like `KeycloakAuthBackend`.
+    Managed Access (UMA). Requires UMA-enabled backend like `KeycloakAuthBackend`.
 
     **NOTE**: Dependency MUST be instantiated, e.g.,:
 
-    `Annotated[Authorized, Depends(Authorized("<resource name>", "<scope>"))]`
+    `Annotated[UMAAuthorize, Depends(UMAAuthorize("<resource name>", "<scope>"))]`
     """
 
     def __init__(self, resource: str, scope: Optional[Union[str, list[str]]] = None):
