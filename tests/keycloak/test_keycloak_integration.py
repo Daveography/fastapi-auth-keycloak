@@ -158,7 +158,7 @@ class KeycloakBackendIntegrationTests(unittest.TestCase):
         }
 
         invalid_jwt = jwt.JWT(header={"alg": "RS256"}, claims=valid_claims)
-        invalid_jwt.make_signed_token(jwk.JWK.generate(kty="RSA", size=512))
+        invalid_jwt.make_signed_token(jwk.JWK.generate(kty="RSA", size=1024))
 
         response = self.client.get("/", headers={"Authorization": f"Bearer {invalid_jwt.serialize()}"})
         self.assertEqual(400, response.status_code)
