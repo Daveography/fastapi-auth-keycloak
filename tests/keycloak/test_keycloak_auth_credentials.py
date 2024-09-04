@@ -122,6 +122,24 @@ class KeycloakAuthCredentialsTests(unittest.IsolatedAsyncioTestCase):
 
         await cred.authorize("test-resource", scope="test")
 
+    async def test_should_succeed_when_user_has_authorized_permission_by_id_with_scope(self):
+        sub = str(uuid4())
+        self.mock_keycloak.decode_token.return_value = {
+            "sub": sub,
+            "email": "me@alphalayer.ai",
+            "preferred_username": "my_user",
+            "scope": "profile email",
+            "authorization": {
+                "permissions": [
+                    {"rsid": "3105879b-116c-41ad-b415-2aa932fe7789", "rsname": "test-resource", "scopes": ["test"]}
+                ]
+            },
+        }
+
+        cred, _ = await self.backend.authenticate(self.http_mock)  # type: ignore
+
+        await cred.authorize_by_id("3105879b-116c-41ad-b415-2aa932fe7789", scope="test")
+
     @mock.patch("fastapi_auth.keycloak.auth_credentials.KeycloakUMA")
     async def test_should_raise_authorization_required_when_not_authorized_for_resource(self, mock_uma: mock.MagicMock):
         mock_uma.return_value.a_resource_set_list_ids = mock.AsyncMock(

@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from starlette.authentication import AuthCredentials
 from typing_extensions import Any, Never, Optional, Union
 
@@ -100,7 +102,7 @@ class KeycloakAuthCredentials(AuthCredentials):
             HTTPException (403 Forbidden): If the authorization server is unavailable.
         """
 
-        if self.__access.has_authorization(resource_id=resource_id, scope=scope):
+        if self.__access.has_authorization(resource_id=UUID(resource_id), scope=scope):
             return
 
         if scope is None:

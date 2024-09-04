@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import Optional, Union
 
@@ -17,7 +19,7 @@ class KeycloakAuthorization(BaseModel):
     def has_permission(
         self,
         resource_name: Optional[str] = None,
-        resource_id: Optional[str] = None,
+        resource_id: Optional[UUID] = None,
         scope: Optional[Union[str, list[str]]] = None,
     ) -> bool:
         """
@@ -42,7 +44,7 @@ class KeycloakAuthorization(BaseModel):
             permission = next(filter(lambda p: p.name == resource_name, self.permissions), None)
 
         if resource_id is not None:
-            permission = next(filter(lambda p: p.id == resource_name, self.permissions), None)
+            permission = next(filter(lambda p: p.id == resource_id, self.permissions), None)
 
         if permission is None:
             return False
