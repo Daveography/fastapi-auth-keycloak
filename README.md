@@ -141,6 +141,23 @@ def add_privileged_data(
     scopes = authorized.auth.scopes
 ```
 
+If you need to check other Keycloak-specific (e.g., not OAuth2 or UMA2 standard) claims, you can instead use the `KeycloakUMAAuthorize` dependency:
+
+```python
+from fastapi import Depends
+from fastapi_auth.keycloak import KeycloakUMAAuthorized
+from typing_extensions import Annotated
+
+@app.post("/privileged/area")
+def add_privileged_data(
+    authorized: Annotated[KeycloakUMAAuthorized, Depends(KeycloakUMAAuthorized("privileged_data", "privileged_data:write"))]
+):
+    # Also check if a user has a specific client role:
+    if authorized.auth.has_role(client="my_realm_client", role="my_client_role"):
+        # Do other stuff
+        ...
+```
+
 ## Contributing
 
 This package utilizes [Poetry](https://python-poetry.org) for dependency management and [pre-commit](https://pre-commit.com/) for ensuring code formatting is automatically done and code style checks are performed.
