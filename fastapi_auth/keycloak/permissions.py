@@ -12,7 +12,7 @@ class KeycloakPermissions(BaseModel):
     Holds user authorization permissions information from Keycloak.
     """
 
-    scope: str = Field(description="A list of scopes the user has been authorized to access")
+    scope: Optional[str] = Field(default=None, description="A list of scopes the user has been authorized to access")
     resource_access: Optional[KeycloakResourceAccess] = Field(
         default=None, description="The client role accesses that the user has"
     )
@@ -30,7 +30,7 @@ class KeycloakPermissions(BaseModel):
             list[str]: A list of scopes the user has been authorized to access.
         """
 
-        return self.scope.split(" ")
+        return self.scope.split(" ") if self.scope is not None else []
 
     def has_client(self, client: str) -> bool:
         """
