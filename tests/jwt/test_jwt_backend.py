@@ -6,12 +6,12 @@ from starlette.authentication import AuthenticationError
 from starlette.datastructures import Headers
 from starlette.requests import HTTPConnection
 
-from fastapi_auth import PublicKey
-from fastapi_auth.jwt import JWTAuthBackend, JWTUser
+from fastapi_auth_keycloak import PublicKey
+from fastapi_auth_keycloak.jwt import JWTAuthBackend, JWTUser
 
 
 class JWTAuthBackendTests(unittest.IsolatedAsyncioTestCase):
-    @mock.patch("fastapi_auth.jwt.backend.jwk")
+    @mock.patch("fastapi_auth_keycloak.jwt.backend.jwk")
     async def asyncSetUp(self, mock_jwk: mock.MagicMock):
         self.backend = JWTAuthBackend(
             algorithms=mock.MagicMock(),
@@ -19,7 +19,7 @@ class JWTAuthBackendTests(unittest.IsolatedAsyncioTestCase):
             public_key=mock.MagicMock(PublicKey),
         )
 
-    @mock.patch("fastapi_auth.jwt.backend.jwt")
+    @mock.patch("fastapi_auth_keycloak.jwt.backend.jwt")
     async def test_should_create_user_for_authorization_bearer_header(self, mock_jwt: mock.MagicMock):
         sub = str(uuid4())
         mock_jwt.json_decode.return_value = {
@@ -37,7 +37,7 @@ class JWTAuthBackendTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(sub, user.display_name)
         self.assertTrue(user.is_authenticated)
 
-    @mock.patch("fastapi_auth.jwt.backend.jwt")
+    @mock.patch("fastapi_auth_keycloak.jwt.backend.jwt")
     async def test_should_return_auth_credentials_with_scopes_if_provided(self, mock_jwt: mock.MagicMock):
         sub = str(uuid4())
         mock_jwt.json_decode.return_value = {"sub": sub, "scope": "profile email"}
@@ -51,7 +51,7 @@ class JWTAuthBackendTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("profile", creds.scopes)
         self.assertIn("email", creds.scopes)
 
-    @mock.patch("fastapi_auth.jwt.backend.jwt")
+    @mock.patch("fastapi_auth_keycloak.jwt.backend.jwt")
     async def test_should_return_empty_auth_credentials_if_no_scopes_provided(self, mock_jwt: mock.MagicMock):
         sub = str(uuid4())
         mock_jwt.json_decode.return_value = {"sub": sub}
@@ -93,7 +93,7 @@ class JWTAuthBackendTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(AuthenticationError):
             await self.backend.authenticate(http_mock)
 
-    @mock.patch("fastapi_auth.jwt.backend.jwk")
+    @mock.patch("fastapi_auth_keycloak.jwt.backend.jwk")
     async def test_should_return_none_if_no_authorization_header_and_auth_not_required(self, mock_jwk: mock.MagicMock):
         backend = JWTAuthBackend(
             algorithms=mock.MagicMock(),

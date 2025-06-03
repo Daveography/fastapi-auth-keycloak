@@ -3,9 +3,9 @@ from uuid import UUID
 from starlette.authentication import AuthCredentials
 from typing_extensions import Any, Never, Optional, Union
 
-from ..uma.exceptions import UMAAuthorizationRequired, UMAAuthorizationServerUnreachable
 from .permissions import KeycloakPermissions
 from .ticket_request import KeycloakPermissionTicketRequest, KeycloakResourceRequest
+from .uma.exceptions import UMAAuthorizationRequired, UMAAuthorizationServerUnreachable
 
 try:
     from keycloak import KeycloakOpenIDConnection, KeycloakUMA

@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import UUID4, EmailStr, Field
 
-from ..user import APIUser
+from .api_user import APIUser
 
 
 class KeycloakUser(APIUser):

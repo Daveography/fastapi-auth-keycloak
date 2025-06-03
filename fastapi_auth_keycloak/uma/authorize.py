@@ -3,7 +3,7 @@ from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from typing_extensions import Optional, Self, Union
 
-from ..user import APIUser
+from ..api_user import APIUser
 from .proto import UMAAuthCredentials
 
 

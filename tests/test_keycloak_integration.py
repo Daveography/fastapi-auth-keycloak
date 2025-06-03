@@ -9,7 +9,7 @@ from keycloak import KeycloakOpenID
 from starlette.middleware.authentication import AuthenticationMiddleware
 from typing_extensions import Any
 
-from fastapi_auth.keycloak import KeycloakAuthBackend
+from fastapi_auth_keycloak import KeycloakAuthBackend
 
 # Keys generated from https://jwt.io/
 rs_public_key = """
@@ -57,7 +57,7 @@ dn/RsYEONbwQSjIfMPkvxF+8HQ==
 
 
 class KeycloakBackendIntegrationTests(unittest.TestCase):
-    @mock.patch("fastapi_auth.keycloak.backend.KeycloakOpenIDConnection")
+    @mock.patch("fastapi_auth_keycloak.backend.KeycloakOpenIDConnection")
     def setUp(self, mock_connection: mock.MagicMock):
         keycloak = KeycloakOpenID(
             server_url=mock.MagicMock(),
@@ -74,7 +74,7 @@ class KeycloakBackendIntegrationTests(unittest.TestCase):
                 realm=mock.MagicMock(),
                 client_id=mock.MagicMock(),
                 client_secret=mock.MagicMock(),
-                audience=["alphalayer", "api"],
+                audience=["daveography", "api"],
             )
 
             app = FastAPI()
@@ -89,8 +89,8 @@ class KeycloakBackendIntegrationTests(unittest.TestCase):
     def test_should_succeed_with_valid_token(self):
         token = self._jwt(
             {
-                "aud": "alphalayer",
-                "email": "dave@alphalayer.ai",
+                "aud": "daveography",
+                "email": "dave@daveography.ca",
                 "name": "Dave Sutherland",
                 "preferred_username": "Dave",
                 "sid": "2368dcf2-e3af-468d-9bf6-5f12baeb5442",
@@ -107,7 +107,7 @@ class KeycloakBackendIntegrationTests(unittest.TestCase):
         token = self._jwt(
             {
                 "aud": "not-correct",
-                "email": "dave@alphalayer.ai",
+                "email": "dave@daveography.ca",
                 "name": "Dave Sutherland",
                 "preferred_username": "Dave",
                 "sid": "2368dcf2-e3af-468d-9bf6-5f12baeb5442",
@@ -127,8 +127,8 @@ class KeycloakBackendIntegrationTests(unittest.TestCase):
 
     def test_should_fail_with_token_signed_with_not_accepted_alg(self):
         valid_claims = {
-            "aud": "alphalayer",
-            "email": "dave@alphalayer.ai",
+            "aud": "daveography",
+            "email": "dave@daveography.ca",
             "name": "Dave Sutherland",
             "preferred_username": "Dave",
             "sid": "2368dcf2-e3af-468d-9bf6-5f12baeb5442",
@@ -147,8 +147,8 @@ class KeycloakBackendIntegrationTests(unittest.TestCase):
 
     def test_should_fail_with_token_signed_with_different_key_pair(self):
         valid_claims = {
-            "aud": "alphalayer",
-            "email": "dave@alphalayer.ai",
+            "aud": "daveography",
+            "email": "dave@daveography.ca",
             "name": "Dave Sutherland",
             "preferred_username": "Dave",
             "sid": "2368dcf2-e3af-468d-9bf6-5f12baeb5442",
@@ -167,8 +167,8 @@ class KeycloakBackendIntegrationTests(unittest.TestCase):
     def test_should_fail_with_expired_token(self):
         expired_token = self._jwt(
             {
-                "aud": "alphalayer",
-                "email": "dave@alphalayer.ai",
+                "aud": "daveography",
+                "email": "dave@daveography.ca",
                 "name": "Dave Sutherland",
                 "preferred_username": "Dave",
                 "sid": "2368dcf2-e3af-468d-9bf6-5f12baeb5442",

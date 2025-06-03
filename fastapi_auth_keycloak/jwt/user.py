@@ -1,6 +1,6 @@
 from pydantic import Field
 
-from ..user import APIUser
+from ..api_user import APIUser
 
 
 class JWTUser(APIUser):

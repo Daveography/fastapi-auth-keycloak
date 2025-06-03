@@ -5,12 +5,12 @@ from uuid import uuid4
 from starlette.datastructures import Headers
 from starlette.requests import HTTPConnection
 
-from fastapi_auth.keycloak import KeycloakAuthBackend
+from fastapi_auth_keycloak import KeycloakAuthBackend
 
 
 class KeycloakUserTests(unittest.IsolatedAsyncioTestCase):
-    @mock.patch("fastapi_auth.keycloak.backend.KeycloakOpenIDConnection")
-    @mock.patch("fastapi_auth.keycloak.backend.jwk")
+    @mock.patch("fastapi_auth_keycloak.backend.KeycloakOpenIDConnection")
+    @mock.patch("fastapi_auth_keycloak.backend.jwk")
     async def asyncSetUp(self, mock_jwk: mock.MagicMock, mock_connection: mock.MagicMock):
         self.mock_keycloak = mock_connection.return_value.keycloak_openid
         self.mock_keycloak.public_key.return_value = "<public key>"
@@ -29,7 +29,7 @@ class KeycloakUserTests(unittest.IsolatedAsyncioTestCase):
         sub = uuid4()
         self.mock_keycloak.decode_token.return_value = {
             "sub": str(sub),
-            "email": "me@alphalayer.ai",
+            "email": "me@daveography.ca",
             "preferred_username": "my_user",
             "scope": "profile email",
         }
@@ -42,7 +42,7 @@ class KeycloakUserTests(unittest.IsolatedAsyncioTestCase):
         sub = str(uuid4())
         self.mock_keycloak.decode_token.return_value = {
             "sub": sub,
-            "email": "me@alphalayer.ai",
+            "email": "me@daveography.ca",
             "preferred_username": "my_user",
             "scope": "profile email",
         }
@@ -55,7 +55,7 @@ class KeycloakUserTests(unittest.IsolatedAsyncioTestCase):
         sub = str(uuid4())
         self.mock_keycloak.decode_token.return_value = {
             "sub": sub,
-            "email": "me@alphalayer.ai",
+            "email": "me@daveography.ca",
             "preferred_username": "my_user",
             "scope": "profile email",
             "name": "FirstName LastName",
@@ -69,7 +69,7 @@ class KeycloakUserTests(unittest.IsolatedAsyncioTestCase):
         sub = str(uuid4())
         self.mock_keycloak.decode_token.return_value = {
             "sub": sub,
-            "email": "me@alphalayer.ai",
+            "email": "me@daveography.ca",
             "preferred_username": "my_user",
             "scope": "profile email",
         }
@@ -82,7 +82,7 @@ class KeycloakUserTests(unittest.IsolatedAsyncioTestCase):
         sub = str(uuid4())
         self.mock_keycloak.decode_token.return_value = {
             "sub": sub,
-            "email": "me@alphalayer.ai",
+            "email": "me@daveography.ca",
             "preferred_username": "my_user",
             "scope": "profile email",
             "groups": ["/alpha-app/administrators"],
@@ -97,7 +97,7 @@ class KeycloakUserTests(unittest.IsolatedAsyncioTestCase):
         sub = str(uuid4())
         self.mock_keycloak.decode_token.return_value = {
             "sub": sub,
-            "email": "me@alphalayer.ai",
+            "email": "me@daveography.ca",
             "preferred_username": "my_user",
             "scope": "profile email",
             "groups": ["/alpha-app/users"],
@@ -112,7 +112,7 @@ class KeycloakUserTests(unittest.IsolatedAsyncioTestCase):
         sub = str(uuid4())
         self.mock_keycloak.decode_token.return_value = {
             "sub": sub,
-            "email": "me@alphalayer.ai",
+            "email": "me@daveography.ca",
             "preferred_username": "my_user",
             "scope": "profile email",
         }

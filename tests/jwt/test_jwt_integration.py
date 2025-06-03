@@ -6,7 +6,7 @@ from jwcrypto import jwk, jwt
 from starlette.middleware.authentication import AuthenticationMiddleware
 from typing_extensions import Any
 
-from fastapi_auth.jwt import JWTAuthBackend
+from fastapi_auth_keycloak.jwt import JWTAuthBackend
 
 # Keys generated from https://jwt.io/
 rs_public_key = """
@@ -57,7 +57,7 @@ class JWTBackendIntegrationTests(unittest.TestCase):
     def setUp(self):
         backend = JWTAuthBackend(
             algorithms=["RS256"],
-            audience=["alphalayer", "api"],
+            audience=["daveography", "api"],
             public_key=rs_public_key,
         )
 
@@ -73,8 +73,8 @@ class JWTBackendIntegrationTests(unittest.TestCase):
     def test_should_succeed_with_valid_token(self):
         token = self._jwt(
             {
-                "aud": "alphalayer",
-                "email": "dave@alphalayer.ai",
+                "aud": "daveography",
+                "email": "dave@daveography.ca",
                 "name": "Dave Sutherland",
                 "preferred_username": "Dave",
                 "sid": "2368dcf2-e3af-468d-9bf6-5f12baeb5442",
@@ -90,7 +90,7 @@ class JWTBackendIntegrationTests(unittest.TestCase):
         token = self._jwt(
             {
                 "aud": "not-correct",
-                "email": "dave@alphalayer.ai",
+                "email": "dave@daveography.ca",
                 "name": "Dave Sutherland",
                 "preferred_username": "Dave",
                 "sid": "2368dcf2-e3af-468d-9bf6-5f12baeb5442",
@@ -109,8 +109,8 @@ class JWTBackendIntegrationTests(unittest.TestCase):
 
     def test_should_fail_with_token_signed_with_not_accepted_alg(self):
         valid_claims = {
-            "aud": "alphalayer",
-            "email": "dave@alphalayer.ai",
+            "aud": "daveography",
+            "email": "dave@daveography.ca",
             "name": "Dave Sutherland",
             "preferred_username": "Dave",
             "sid": "2368dcf2-e3af-468d-9bf6-5f12baeb5442",
@@ -128,8 +128,8 @@ class JWTBackendIntegrationTests(unittest.TestCase):
 
     def test_should_fail_with_token_signed_with_different_key_pair(self):
         valid_claims = {
-            "aud": "alphalayer",
-            "email": "dave@alphalayer.ai",
+            "aud": "daveography",
+            "email": "dave@daveography.ca",
             "name": "Dave Sutherland",
             "preferred_username": "Dave",
             "sid": "2368dcf2-e3af-468d-9bf6-5f12baeb5442",

@@ -7,9 +7,9 @@ from starlette.datastructures import Secret
 from starlette.requests import HTTPConnection
 from typing_extensions import Any, Callable, Optional, Union
 
-from ..auth_header import AuthenticationHeader
-from ..public_key import PublicKey
 from .auth_credentials import KeycloakAuthCredentials
+from .auth_header import AuthenticationHeader
+from .public_key import PublicKey
 from .user import KeycloakUser
 
 try:

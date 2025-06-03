@@ -26,7 +26,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.9, "3.10", 3.11, 3.12]
+        python-version: [3.9, "3.10", 3.11, 3.12, 3.13]
 
     steps:
       - name: Git Checkout
@@ -42,7 +42,7 @@ jobs:
           cache: poetry
 
       - name: Install Dependencies
-        run: poetry install --all-extras
+        run: poetry install
 
       - name: Lint with Flake8
         run: poetry run flake8 .

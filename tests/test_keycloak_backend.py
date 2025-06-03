@@ -5,7 +5,7 @@ from uuid import uuid4
 from starlette.datastructures import Headers
 from starlette.requests import HTTPConnection
 
-from fastapi_auth.keycloak import KeycloakAuthBackend, KeycloakUser
+from fastapi_auth_keycloak import KeycloakAuthBackend, KeycloakUser
 
 rs_public_key = (
     "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAu1SU1LfVLPHCozMxH2Mo"
@@ -19,8 +19,8 @@ rs_public_key = (
 
 
 class KeycloakAuthBackendTests(unittest.IsolatedAsyncioTestCase):
-    @mock.patch("fastapi_auth.keycloak.backend.KeycloakOpenIDConnection")
-    @mock.patch("fastapi_auth.keycloak.backend.jwk")
+    @mock.patch("fastapi_auth_keycloak.backend.KeycloakOpenIDConnection")
+    @mock.patch("fastapi_auth_keycloak.backend.jwk")
     async def asyncSetUp(self, mock_jwk: mock.MagicMock, mock_connection: mock.MagicMock):
         self.mock_keycloak = mock_connection.return_value.keycloak_openid
         self.mock_keycloak.public_key.return_value = "<public key>"
@@ -39,7 +39,7 @@ class KeycloakAuthBackendTests(unittest.IsolatedAsyncioTestCase):
         sub = str(uuid4())
         self.mock_keycloak.decode_token.return_value = {
             "sub": sub,
-            "email": "me@alphalayer.ai",
+            "email": "me@daveography.ca",
             "preferred_username": "my_user",
             "scope": "profile email",
         }

@@ -1,8 +1,8 @@
 from starlette.requests import Request
 from typing_extensions import Self
 
-from ..uma.authorize import UMAAuthorize
 from .auth_credentials import KeycloakAuthCredentials
+from .uma.authorize import UMAAuthorize
 from .user import KeycloakUser
 
 

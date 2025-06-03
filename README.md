@@ -1,51 +1,20 @@
-# FastAPI Authentication Modules
+# Keycloak Authentication Backend for FastAPI
 
-Provides Starlette/FastAPI Authentication backend modules for these Authentication methods:
-- JSON Web Token (JWT)
-- Keycloak JWT
+Provides [Starlette](https://www.starlette.io/)/[FastAPI](https://fastapi.tiangolo.com/) Authentication backend modules for [Keycloak](https://www.keycloak.org/).
+
 
 ## Install
+
 ```bash
-poetry source add --priority=supplemental alphalayer https://pkgs.dev.azure.com/alphalayerai/Packages/_packaging/Python/pypi/simple/
-poetry add --source alphalayer fastapi-auth
+pip install fastapi-auth-keycloak
 ```
 
-If using Keycloak:
-```bash
-poetry add --source alphalayer fastapi-auth[keycloak]
-```
 
 ## Examples
 
-### Basic JWT
-
 ```python
 from fastapi import FastAPI, HTTPException, Request, status
-from fastapi_auth import PublicKey
-from fastapi_auth.jwt import JWTUser, JWTAuthBackend
-from starlette.middleware import Middleware
-from starlette.middleware.authentication import AuthenticationMiddleware
-
-backend = JWTAuthBackend(
-    algorithms=["RS256"],
-    audience="my_aud", # This can be a list of accepted audiences, or an empty list for any
-    key=PublicKey("<public key>"),
-    # authentication_required=False, <- Set this to allow unauthenticated requests; defaults to `True`
-)
-
-app = FastAPI()
-app.add_middleware(AuthenticationMiddleware, backend=backend)
-
-@app.get("/user/identity")
-def get_current_user_identity(request: Request):
-    return request.user.identity
-```
-
-### Keycloak JWT
-
-```python
-from fastapi import FastAPI, HTTPException, Request, status
-from fastapi_auth.keycloak import KeycloakUser, KeycloakAuthBackend
+from fastapi_auth_keycloak import KeycloakUser, KeycloakAuthBackend
 from starlette.datastructures import Secret
 from starlette.middleware import Middleware
 from starlette.middleware.authentication import AuthenticationMiddleware
@@ -81,14 +50,14 @@ def get_no_homers_data(request: Request):
     return {"Welcome Homer Glumplich!"}
 ```
 
-#### Keycloak UMA Authorization
+### UMA Authorization
 This module supports using [User-Managed Access (UMA) 2.0 Grant for OAuth 2.0 Authorization](https://docs.kantarainitiative.org/uma/wg/oauth-uma-grant-2.0-09.html) to authorize access to resources via the `KeycloakAuthCredentials` object, provided via `Request.auth`.
 
 If the user's JWT does not currently authorize them to access the specified resource and scope(s) if provided, the `authorize` method will throw an HTTP 401 response with a `WWW-Authenticate` header to indicate to the client that they should obtain a UMA 2.0-compliant Requesting Party Token (RPT, of type `urn:ietf:params:oauth:grant-type:uma-ticket`) to be authorized to access the resource. See the [specification](https://docs.kantarainitiative.org/uma/wg/oauth-uma-grant-2.0-09.html) for details.
 
 ```python
 from fastapi import FastAPI, HTTPException, Request, status
-from fastapi_auth.keycloak import KeycloakUser, KeycloakAuthBackend
+from fastapi_auth_keycloak import KeycloakUser, KeycloakAuthBackend
 from starlette.datastructures import Secret
 from starlette.middleware import Middleware
 from starlette.middleware.authentication import AuthenticationMiddleware
@@ -128,7 +97,7 @@ FastAPI-Auth also provides a `UMAAuthorize` class that can be used as a FastAPI 
 
 ```python
 from fastapi import Depends
-from fastapi_auth.uma import UMAAuthorized
+from fastapi_auth_keycloak.uma import UMAAuthorized
 from typing_extensions import Annotated
 
 @app.post("/privileged/area")
@@ -145,7 +114,7 @@ If you need to check other Keycloak-specific (e.g., not OAuth2 or UMA2 standard)
 
 ```python
 from fastapi import Depends
-from fastapi_auth.keycloak import KeycloakUMAAuthorized
+from fastapi_auth_keycloak import KeycloakUMAAuthorized
 from typing_extensions import Annotated
 
 @app.post("/privileged/area")
@@ -158,18 +127,39 @@ def add_privileged_data(
         ...
 ```
 
+### Basic JWT
+
+This library also provides an Auth Backend for barebones JWTs:
+
+```python
+from fastapi import FastAPI, HTTPException, Request, status
+from fastapi_auth_keycloak import PublicKey
+from fastapi_auth_keycloak.jwt import JWTUser, JWTAuthBackend
+from starlette.middleware import Middleware
+from starlette.middleware.authentication import AuthenticationMiddleware
+
+backend = JWTAuthBackend(
+    algorithms=["RS256"],
+    audience="my_aud", # This can be a list of accepted audiences, or an empty list for any
+    key=PublicKey("<public key>"),
+    # authentication_required=False, <- Set this to allow unauthenticated requests; defaults to `True`
+)
+
+app = FastAPI()
+app.add_middleware(AuthenticationMiddleware, backend=backend)
+
+@app.get("/user/identity")
+def get_current_user_identity(request: Request):
+    return request.user.identity
+```
+
 ## Contributing
 
 This package utilizes [Poetry](https://python-poetry.org) for dependency management and [pre-commit](https://pre-commit.com/) for ensuring code formatting is automatically done and code style checks are performed.
 
-You'll also want to set up and use `pyenv` to manage Python versions. See [Managing Multiple Python Versions With pyenv](https://realpython.com/intro-to-pyenv/) for an introduction to pyenv. Download and install for [Linux & Mac](https://github.com/pyenv/pyenv) or [Windows](https://github.com/pyenv-win/pyenv-win).
-
 ```bash
-git clone https://github.com/alpha-layer/fastapi-auth.git fastapi-auth
-cd fastapi-auth
-pyenv update
-pyenv install 3.9.13
-pyenv local 3.9.13
+git clone https://github.com/Daveography/fastapi-auth-keycloak.git fastapi-auth-keycloak
+cd fastapi-auth-keycloak
 pip install poetry
 poetry install
 poetry run pre-commit install

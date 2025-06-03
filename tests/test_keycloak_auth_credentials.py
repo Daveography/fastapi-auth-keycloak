@@ -5,13 +5,13 @@ from uuid import uuid4
 from starlette.datastructures import Headers
 from starlette.requests import HTTPConnection
 
-from fastapi_auth.keycloak import KeycloakAuthBackend
-from fastapi_auth.uma.exceptions import UMAAuthorizationRequired
+from fastapi_auth_keycloak import KeycloakAuthBackend
+from fastapi_auth_keycloak.uma.exceptions import UMAAuthorizationRequired
 
 
 class KeycloakAuthCredentialsTests(unittest.IsolatedAsyncioTestCase):
-    @mock.patch("fastapi_auth.keycloak.backend.KeycloakOpenIDConnection")
-    @mock.patch("fastapi_auth.keycloak.backend.jwk")
+    @mock.patch("fastapi_auth_keycloak.backend.KeycloakOpenIDConnection")
+    @mock.patch("fastapi_auth_keycloak.backend.jwk")
     async def asyncSetUp(self, mock_jwk: mock.MagicMock, mock_connection: mock.MagicMock):
         self.mock_connection = mock_connection.return_value
         self.mock_keycloak = self.mock_connection.keycloak_openid
@@ -31,7 +31,7 @@ class KeycloakAuthCredentialsTests(unittest.IsolatedAsyncioTestCase):
         sub = str(uuid4())
         self.mock_keycloak.decode_token.return_value = {
             "sub": sub,
-            "email": "me@alphalayer.ai",
+            "email": "me@daveography.ca",
             "preferred_username": "my_user",
             "scope": "profile email",
         }
@@ -49,7 +49,7 @@ class KeycloakAuthCredentialsTests(unittest.IsolatedAsyncioTestCase):
         sub = str(uuid4())
         self.mock_keycloak.decode_token.return_value = {
             "sub": sub,
-            "email": "me@alphalayer.ai",
+            "email": "me@daveography.ca",
             "preferred_username": "my_user",
             "scope": "profile email",
             "resource_access": {"alpha-app": {"roles": ["super-user"]}},
@@ -63,7 +63,7 @@ class KeycloakAuthCredentialsTests(unittest.IsolatedAsyncioTestCase):
         sub = str(uuid4())
         self.mock_keycloak.decode_token.return_value = {
             "sub": sub,
-            "email": "me@alphalayer.ai",
+            "email": "me@daveography.ca",
             "preferred_username": "my_user",
             "scope": "profile email",
             "resource_access": {"alpha-app": {"roles": ["regular-user"]}},
@@ -77,7 +77,7 @@ class KeycloakAuthCredentialsTests(unittest.IsolatedAsyncioTestCase):
         sub = str(uuid4())
         self.mock_keycloak.decode_token.return_value = {
             "sub": sub,
-            "email": "me@alphalayer.ai",
+            "email": "me@daveography.ca",
             "preferred_username": "my_user",
             "scope": "profile email",
         }
@@ -90,7 +90,7 @@ class KeycloakAuthCredentialsTests(unittest.IsolatedAsyncioTestCase):
         sub = str(uuid4())
         self.mock_keycloak.decode_token.return_value = {
             "sub": sub,
-            "email": "me@alphalayer.ai",
+            "email": "me@daveography.ca",
             "preferred_username": "my_user",
             "scope": "profile email",
             "authorization": {
@@ -108,7 +108,7 @@ class KeycloakAuthCredentialsTests(unittest.IsolatedAsyncioTestCase):
         sub = str(uuid4())
         self.mock_keycloak.decode_token.return_value = {
             "sub": sub,
-            "email": "me@alphalayer.ai",
+            "email": "me@daveography.ca",
             "preferred_username": "my_user",
             "scope": "profile email",
             "authorization": {
@@ -126,7 +126,7 @@ class KeycloakAuthCredentialsTests(unittest.IsolatedAsyncioTestCase):
         sub = str(uuid4())
         self.mock_keycloak.decode_token.return_value = {
             "sub": sub,
-            "email": "me@alphalayer.ai",
+            "email": "me@daveography.ca",
             "preferred_username": "my_user",
             "scope": "profile email",
             "authorization": {
@@ -140,7 +140,7 @@ class KeycloakAuthCredentialsTests(unittest.IsolatedAsyncioTestCase):
 
         await cred.authorize_by_id("3105879b-116c-41ad-b415-2aa932fe7789", scope="test")
 
-    @mock.patch("fastapi_auth.keycloak.auth_credentials.KeycloakUMA")
+    @mock.patch("fastapi_auth_keycloak.auth_credentials.KeycloakUMA")
     async def test_should_raise_authorization_required_when_not_authorized_for_resource(self, mock_uma: mock.MagicMock):
         mock_uma.return_value.a_resource_set_list_ids = mock.AsyncMock(
             return_value=["fb5d53ad-c64e-4b73-881e-7e32a8d274ab"]
@@ -149,7 +149,7 @@ class KeycloakAuthCredentialsTests(unittest.IsolatedAsyncioTestCase):
         sub = str(uuid4())
         self.mock_keycloak.decode_token.return_value = {
             "sub": sub,
-            "email": "me@alphalayer.ai",
+            "email": "me@daveography.ca",
             "preferred_username": "my_user",
             "scope": "profile email",
             "authorization": {
@@ -166,7 +166,7 @@ class KeycloakAuthCredentialsTests(unittest.IsolatedAsyncioTestCase):
 
         mock_raise.assert_called_once()
 
-    @mock.patch("fastapi_auth.keycloak.auth_credentials.KeycloakUMA")
+    @mock.patch("fastapi_auth_keycloak.auth_credentials.KeycloakUMA")
     async def test_should_raise_authorization_required_when_not_authorized_for_resource_scope(
         self, mock_uma: mock.MagicMock
     ):
@@ -177,7 +177,7 @@ class KeycloakAuthCredentialsTests(unittest.IsolatedAsyncioTestCase):
         sub = str(uuid4())
         self.mock_keycloak.decode_token.return_value = {
             "sub": sub,
-            "email": "me@alphalayer.ai",
+            "email": "me@daveography.ca",
             "preferred_username": "my_user",
             "scope": "profile email",
             "authorization": {
@@ -194,7 +194,7 @@ class KeycloakAuthCredentialsTests(unittest.IsolatedAsyncioTestCase):
 
         mock_raise.assert_called_once()
 
-    @mock.patch("fastapi_auth.keycloak.auth_credentials.KeycloakUMA")
+    @mock.patch("fastapi_auth_keycloak.auth_credentials.KeycloakUMA")
     async def test_should_raise_authorization_required_when_user_has_no_authorized_permissions(
         self, mock_uma: mock.MagicMock
     ):
@@ -205,7 +205,7 @@ class KeycloakAuthCredentialsTests(unittest.IsolatedAsyncioTestCase):
         sub = str(uuid4())
         self.mock_keycloak.decode_token.return_value = {
             "sub": sub,
-            "email": "me@alphalayer.ai",
+            "email": "me@daveography.ca",
             "preferred_username": "my_user",
             "scope": "profile email",
         }
@@ -222,7 +222,7 @@ class KeycloakAuthCredentialsTests(unittest.IsolatedAsyncioTestCase):
 
         mock_raise.assert_called_once()
 
-    @mock.patch("fastapi_auth.keycloak.auth_credentials.KeycloakUMA")
+    @mock.patch("fastapi_auth_keycloak.auth_credentials.KeycloakUMA")
     async def test_raise_authorization_required_should_have_www_authenticate_header(self, mock_uma: mock.MagicMock):
         mock_uma.return_value.a_resource_set_list_ids = mock.AsyncMock(
             return_value=["3105879b-116c-41ad-b415-2aa932fe7789"]
@@ -235,7 +235,7 @@ class KeycloakAuthCredentialsTests(unittest.IsolatedAsyncioTestCase):
         sub = str(uuid4())
         self.mock_keycloak.decode_token.return_value = {
             "sub": sub,
-            "email": "me@alphalayer.ai",
+            "email": "me@daveography.ca",
             "preferred_username": "my_user",
             "scope": "profile email",
         }

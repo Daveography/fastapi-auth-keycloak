@@ -2,8 +2,8 @@ import unittest
 from unittest.mock import MagicMock
 from uuid import uuid4
 
-from fastapi_auth.keycloak import KeycloakAuthCredentials, KeycloakResourcePermission
-from fastapi_auth.uma import proto
+from fastapi_auth_keycloak import KeycloakAuthCredentials, KeycloakResourcePermission
+from fastapi_auth_keycloak.uma import proto
 
 
 class KeycloakUMAProtocolTests(unittest.TestCase):
@@ -16,7 +16,7 @@ class KeycloakUMAProtocolTests(unittest.TestCase):
             keycloak=MagicMock(),
             token={
                 "sub": str(uuid4()),
-                "email": "me@alphalayer.ai",
+                "email": "me@daveography.ca",
                 "preferred_username": "my_user",
                 "scope": "profile email",
             },
