@@ -22,7 +22,7 @@ repository = "https://github.com/Daveography/fastapi-auth-keycloak"
 version = "0.8.0"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
+python = ">3.9.1,<4.0"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^6.0.0"
